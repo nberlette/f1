@@ -1,0 +1,42 @@
+name: Scrape
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "(setup) checkout"
+        uses: actions/checkout@v2
+      - name: "(setup) deno"
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v1.x
+      # - name: "(setup) import gpg"
+      #   uses: crazy-max/ghaction-import-gpg@v3
+      #   with:
+      #     gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+      #     passphrase: ${{ secrets.PASSPHRASE }}
+      #     git-user-signingkey: true
+      #     git-commit-gpgsign: true
+      - name: "(setup) assets directory"
+        run: >-
+          if [ -e "./assets" ]; then
+            rm -f ./assets/latest.* 2>/dev/null && \
+            printf "\n\e[1;32m🚮 Emptied the latest slot from %s\e[0m\n\n" "./assets"
+          else
+            mkdir -p -v ./assets && \
+            printf "\n\e[1;32m🚼 Successfully created %s\e[0m\n\n" "./assets"
+          fi
+        working-directory: ./
+      - name: deno run
+        run: deno run --unstable --allow-net --allow-read --allow-write main.ts
+
+      - name: commit assets
+        run: |
+          git config --local user.email "nick@berlette.com"
+          git config --local user.name "Nicholas Berlette"
+          git add ./assets
+          git commit -m "chore(actions): add new photo"
+          git push
