@@ -33,5 +33,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           coauthor_name: "Nicholas Berlette"
           coauthor_email: "nick@berlette.com"
-          commit_message: "chore(automated): add photo"
+          message: "chore(automated): add photo"
           directory: "./assets"
