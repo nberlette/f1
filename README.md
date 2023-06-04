@@ -1,7 +1,17 @@
+<div align="center">
+
 # 🏎️ F1
 
 Scrapes a live photo every ~15 minutes of the Formula 1 racetrack build
-progression in Las Vegas, NV. Scheduled completion is October 2023.
+progression in Las Vegas, NV. Scheduled completion is October 2023. At the end of the project the images will be compiled into a timelapse.
+
+<br>
+
+![](./.github/opengraph.jpg)
+
+</div>
+
+<br>
 
 ## Summary
 
@@ -14,13 +24,12 @@ The script is pretty basic, and has 0 dependencies other than Deno. It fetches
 the latest image from a live feed, saves it to `./assets`, and makes a copy to
 `latest.jpg` for convenience.
 
-Aside from that, it's just some basic logging and error handling.
+### Tools Used
 
-At the end of the project the images will be stitched together into a timelapse.
+- [x] [`Deno v1.34`](https://deno.land/manual@v1.34.1)
+- [x] [`GitHub Actions`](https://github.com/actions)
+- [x] [`TypeScript 5.0.4`](https://typescriptlang.org/)
 
-## Latest Image
-
-[![](./assets/latest.jpg)](./assets/latest.jpg)
 
 ### Image Source
 
@@ -31,11 +40,9 @@ data, this project will continue to auto-update.
 > This project will continue to update until the track is completed, but could
 > be discontinued at any time if the image stream becomes unavailable.
 
-### Tools Used
+## Latest Image
 
-- [x] [`Deno v1.34`](https://deno.land/manual@v1.34.1)
-- [x] [`GitHub Actions`](https://github.com/actions)
-- [x] [`TypeScript 5.0.4`](https://typescriptlang.org/)
+[![](./assets/latest.jpg)](./assets/latest.jpg)
 
 ---
 
