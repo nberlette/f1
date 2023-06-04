@@ -1,9 +1,10 @@
 #!/usr/bin/env -S deno run --allow-net --allow-read --allow-write --unstable
 
 async function read(url: string, prefix = "Read failure") {
-  const { ok, status, statusText, arrayBuffer } = await fetch(url);
+  const res = await fetch(url);
+  const { ok, status, statusText } = res;
 
-  if (ok) return new Uint8Array(await arrayBuffer());
+  if (ok) return new Uint8Array(await res.arrayBuffer());
 
   throw new Error(
     `${prefix}: HTTP ${status} - ${statusText ?? "Unknown error"}`,
