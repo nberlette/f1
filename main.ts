@@ -1,56 +1,62 @@
 #!/usr/bin/env -S deno run --allow-net --allow-read --allow-write --unstable
 
-async function read(url: string, prefix = "Read failure") {
-  const res = await fetch(url);
+const url = 
+  "https://oxblue.com/archive/a4ed2c099b4f3d942fd3d69702cd6d6b/1024x768.jpg";
+const dir = "./assets";
+const file = `${dir}/${
+  new Date().toJSON().replace(/:/g, "_").replace(/\..*$/, "")
+}.jpg`;
+const latest = `${dir}/latest.jpg`;
+
+async function read(url: string) {
+  const res = await fetch(`${url}?ts=${+new Date()}`);
   const { ok, status, statusText } = res;
 
   if (ok) return new Uint8Array(await res.arrayBuffer());
 
   throw new Error(
-    `${prefix}: HTTP ${status} - ${statusText ?? "Unknown error"}`,
+    `Read failure: HTTP ${status} - ${statusText ?? "Unknown error"}`,
   );
 }
 
-async function write(file: string, data: Uint8Array): Promise<void> {
-  file = file.replace(/[\/\\]+/g, "/").replace(/[^a-z0-9-_./]/gi, "");
+async function write(data: Uint8Array): Promise<void> {
+  const filename = file.replace(/[\/\\]+/g, "/").replace(/[^a-z0-9-_./]/gi, "");
+  const size = data.byteLength;
+
+  const fmt = new Intl.NumberFormat("en", {
+    unitDisplay: "narrow",
+    unit: "byte",
+    notation: "compact",
+    signDisplay: "exceptZero",
+    style: "unit",
+  });
 
   try {
-    await Deno.writeFile(file, data);
+    await Deno.writeFile(filename, data);
+
+    console.log(
+      `🆕 Created ${filename} \x1b[92m(${fmt.format(size)})\x1b[0m`,
+    );
+
+    const prev = await Deno.stat(latest);
+    const diff = size - prev.size;
+
+    if (diff) {
+      // only update latest.jpg if the file size has changed
+      await Deno.copyFile(filename, latest);
+
+      console.log(
+        `✅ Updated ${latest} \x1b[${diff < 0 ? 91 : 92}m(${
+          fmt.format(diff)
+        })\x1b[0m`,
+      );
+    }
   } catch (error) {
     if (error instanceof Deno.errors.NotFound) {
       await Deno.mkdir(file.replace(/[^\/]+$/, ""), { recursive: true });
-      return await write(file, data);
-    }
-    throw error;
+      return await write(data); // try again
+    } else throw error;
   }
 }
 
-async function main() {
-  // deno-fmt-ignore
-  const url = `https://oxblue.com/archive/a4ed2c099b4f3d942fd3d69702cd6d6b/1024x768.jpg?ts=${+new Date()}`;
-
-  const dir = "./assets";
-  const file = `${dir}/${
-    new Date().toJSON().replace(/:/g, "_").replace(/\..*$/, "")
-  }.jpg`;
-
-  const data = await read(url);
-
-  await write(file, data);
-
-  const fmt = (n: number | bigint | string) =>
-    Intl.NumberFormat("en", {
-      maximumFractionDigits: 2,
-      maximumSignificantDigits: 6,
-      minimumSignificantDigits: 2,
-      notation: "compact",
-      signDisplay: "exceptZero",
-    }).format(Number(n));
-
-  console.log(`🆕 Wrote ${fmt(data.byteLength)} B → ${file}`);
-
-  await Deno.copyFile(file, `${dir}/latest.jpg`);
-  console.log(`✅ Copied ${file} → ${dir}/latest.jpg`);
-}
-
-if (import.meta.main) await main();
+if (import.meta.main) await read(url).then(write);
