@@ -5,11 +5,13 @@
 Scrapes a live photo every ~15 minutes of the Formula 1 racetrack build
 progression in Las Vegas, NV. Scheduled completion is October 2023. At the end of the project the images will be compiled into a timelapse.
 
+</div>
+
 <br>
 
-![](./.github/opengraph.jpg)
+## Latest Image
 
-</div>
+[![](./assets/latest.jpg)](./assets/latest.jpg)
 
 <br>
 
@@ -40,10 +42,6 @@ data, this project will continue to auto-update.
 > This project will continue to update until the track is completed, but could
 > be discontinued at any time if the image stream becomes unavailable.
 
-## Latest Image
-
-[![](./assets/latest.jpg)](./assets/latest.jpg)
-
 ---
 
 <div align="center">
@@ -58,5 +56,9 @@ data, this project will continue to auto-update.
 ##### This project is not affiliated with Formula 1, the FIA, or any of their subsidiaries. This project is not for profit, and is intended for educational purposes only. The image stream data is copyright its respective authors and owners.
 
 ###### _I'm just a fan with a code habit._
+  
+<br>
+
+![](./.github/opengraph.jpg)
 
 </div>
