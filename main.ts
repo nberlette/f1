@@ -50,6 +50,7 @@ async function write(data: Uint8Array): Promise<void> {
     const diff = size - last;
 
     if (diff) {
+      await Deno.remove(latest);
       await Deno.symlink(filename, latest);
       console.log(
         `🔗 ${filename} → ${latest} (\x1b[${diff < 0 ? 91 : 92}m${
