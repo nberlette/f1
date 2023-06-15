@@ -49,19 +49,21 @@ async function write(data: Uint8Array): Promise<void> {
     const { size: last } = await Deno.stat(latest).catch(() => ({ size: 0 }));
     const diff = size - last;
 
-    if (diff) {
-      Deno.chdir(dir);
-      await Deno.symlink(
-        filename.replace(`${dir}/`, ""),
-        latest.replace(`${dir}/`, ""),
-      ).then(() => {
-        console.log(
-          `🔗 ${filename} → ${latest} (\x1b[${diff < 0 ? 91 : 92}m${
-            fmt.format(diff)
-          } \x1b[1m${diff < 0 ? "↓ smaller" : "↑ larger"}\x1b[0m)`,
-        );
-      }).catch(() => {});
+    if (await Deno.lstat(latest).catch(() => false)) {
+      await Deno.remove(latest).catch(() => false);
     }
+    Deno.chdir(dir);
+
+    await Deno.symlink(
+      filename.replace(`${dir}/`, ""),
+      latest.replace(`${dir}/`, ""),
+    ).then(() => {
+      console.log(
+        `🔗 ${filename} → ${latest} (\x1b[${diff < 0 ? 91 : 92}m${
+          fmt.format(diff)
+        } \x1b[1m${diff < 0 ? "↓ smaller" : "↑ larger"}\x1b[0m)`,
+      );
+    }).catch(console.error);
   }
 }
 
