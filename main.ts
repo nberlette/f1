@@ -54,7 +54,7 @@ async function write(data: Uint8Array): Promise<void> {
     }
     Deno.chdir(dir);
 
-    await Deno.symlink(
+    await Deno.link(
       filename.replace(`${dir}/`, ""),
       latest.replace(`${dir}/`, ""),
     ).then(() => {
