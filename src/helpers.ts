@@ -9,7 +9,7 @@ export const T = () => true;
 /** No-op function. Always returns `void`. */
 export const N = () => {};
 
-export const dirname = (path: string) => path.replace(/(.+)\/[^\/.]+$/, "$1");
+export const dirname = (path: string) => path.replace(/(.+?)\/[^\/]+$/, "$1");
 
 export const basename = (path: string) => path.replace(/.*\/(.+?)$/, "$1");
 
