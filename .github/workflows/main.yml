@@ -20,7 +20,7 @@ jobs:
 
       - id: scrape
         name: deno run
-        run: deno run --unstable --allow-net --allow-read --allow-write main.ts
+        run: deno run --unstable --allow-all main.ts
 
       - name: upload artifacts
         uses: actions/upload-artifact@v2
