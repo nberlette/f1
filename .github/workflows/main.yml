@@ -22,6 +22,12 @@ jobs:
         name: deno run
         run: deno run --unstable --allow-net --allow-read --allow-write main.ts
 
+      - name: upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: photo
+          path: ${{ steps.scrape.outputs.filename }}
+
       - name: commit + push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
