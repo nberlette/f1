@@ -10,13 +10,16 @@ jobs:
     steps:
       - name: "(setup) checkout"
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: "(setup) deno"
         uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
 
-      - name: deno run
+      - id: scrape
+        name: deno run
         run: deno run --unstable --allow-net --allow-read --allow-write main.ts
 
       - name: commit + push
