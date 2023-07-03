@@ -27,29 +27,6 @@ export const sizeof = async (path: string) =>
 export const mkdir = async (path: string, recursive = true) =>
   await Deno.mkdir(path, { recursive }).then(T).catch(F);
 
-/**
- * Helper function to normalize the assets folder to the latest structure
- * the project is using. it used to be a flat folder with all of the images
- * in it, but now its structured using the date of the image:
- *  `./assets/YYYY-MM-DD/hh_mm_ss.jpg`
- */
-export async function cleanup(path: string = BASEDIR) {
-  path = import.meta.resolve(path).replace(/^file:\/\//, "");
-  for await (const { name, isFile } of Deno.readDir(path)) {
-    if (!isFile || name === LATEST) continue;
-    const [date, time] = name.split(/(?<=-\d{2})T(?=\d{2}_)/, 2);
-    if (!date || !time) continue;
-    await mkdir(`${path}/${date}`);
-    await Deno.rename(
-      `${path}/${name}`,
-      `${path}/${date}/${time.replace(/\.(\w+?)$/, "")}.jpg`,
-    );
-    console.log(
-      `\n🚚 \x1b[2;4;9m${path}/${name}\x1b[0;2m → \x1b[1;4;92m${path}/${date}/${time}.jpg\x1b[0m`,
-    );
-  }
-}
-
 const sizeFormatter = new Intl.NumberFormat("en", {
   unitDisplay: "narrow",
   unit: "byte",
