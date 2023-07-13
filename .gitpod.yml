@@ -1,0 +1,55 @@
+image: nberlette/gitpod-enhanced
+
+tasks:
+  - init: |
+      # set the deno environment variables prior to install
+      cat<<-'BASHRC' >> /home/gitpod/.bashrc
+        export DENO_INSTALL="$HOME/.deno"
+        export DENO_INSTALL_ROOT="$DENO_INSTALL/bin"
+        export PATH="$DENO_INSTALL_ROOT:$PATH"
+
+        if ! which deno &>/dev/null; then
+          curl -fsSL https://deno.land/install.sh | sh -
+        fi
+      BASHRC
+
+      source /home/gitpod/.bashrc
+    before: |
+      # cache our dependencies
+      if which deno &>/dev/null; then
+        [ -f deps.ts ] && 
+          deno cache --reload deps.ts &>/dev/null;
+        [ -f import_map.json ] && 
+          deno cache --reload import_map.json &>/dev/null;
+        [ -f deno.json ] && 
+          deno cache --reload deno.json &>/dev/null;
+      if
+    command: |
+      deno task dev
+
+vscode:
+  extensions:
+    - denoland.vscode-deno
+    - editorconfig.editorconfig
+    - vsls-contrib.gistfs
+    - sdras.night-owl
+    - redhat.vscode-yaml
+    - antfu.iconify
+    - antfu.browse-lite
+    - gitpod.gitpod-desktop
+    - gitpod.gitpod-remote-ssh
+
+github:
+  prebuilds:
+    master: true
+    branches: true
+    pullRequests: true
+    pullRequestsFromForks: true
+    addLabel: "gitpod"
+    addCheck: true
+    addBadge: true
+
+ports:
+  - port: 8000-8888
+    visibility: private
+    onOpen: open-preview
