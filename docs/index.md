@@ -1,5 +1,3 @@
-<div align="center">
-
 # F1 Live Photo Scraper
 ### 🏎️ Tracking the Formula 1 track build in Las Vegas
 
@@ -44,5 +42,3 @@ The project is powered by Deno, offering secure JavaScript runtime with first-cl
 This project is neither affiliated with nor endorsed by [**Formula 1**®](https://formula1.com), the FIA®, or any related entities. It's purely educational and non-commercial.
 
 All images are owned by [**OxBlue**](https://oxblue.com) and are not intended for commercial use.
-
-</div>
