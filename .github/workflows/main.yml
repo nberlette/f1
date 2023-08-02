@@ -19,15 +19,15 @@ jobs:
           deno-version: v1.x
 
       - id: scrape
-        name: deno run
+        name: "(run) main.ts"
         run: deno run --unstable --allow-all main.ts
 
-      - name: upload artifacts
-        uses: actions/upload-artifact@v2
+      - name: "upload artifacts"
+        uses: actions/upload-artifact@v3
         with:
           path: ${{ steps.scrape.outputs.filename }}
 
-      - name: commit + push
+      - name: "commit + push"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
