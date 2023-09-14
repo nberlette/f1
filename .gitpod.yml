@@ -2,14 +2,12 @@ image: nberlette/gitpod-enhanced:latest
 
 tasks:
   - init: |
-      if ! command -v deno &>/dev/null; then
-        curl -fsSL https://deno.land/install.sh | sh -;
-        deno upgrade --canary -q -f 
-      fi
+      which deno &>/dev/null || curl -fsSL https://deno.land/install.sh | sh -;
+      deno upgrade --canary -q -f 
       if [ -r ./deno.lock ]; then
         rm -f deno.lock &>/dev/null;
-        for f in $(find . -type f \( -name "*.ts" -or -name "*.mjs" -or -name "*.js" \) -maxdepth 3 \;); do 
-          deno cache --reload --lock-write "$f" &>/dev/null; 
+        for f in $(find . \( -type f -name "*.[mc]?[tj]sx?" -and -not -path "**/node_modules/**" \) -maxdepth 3);
+          do deno cache --reload --lock-write "$f" &>/dev/null; 
         done
       fi
     command: |
@@ -29,7 +27,6 @@ vscode:
     - github.copilot
     - github.copilot-labs
     - github.vscode-pull-request-github
-
 
 github:
   prebuilds:
