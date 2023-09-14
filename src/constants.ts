@@ -1,8 +1,50 @@
+// #region Deno KV
+
+/**
+ * Set the path for the persisted database file with the $DENO_KV_PATH
+ * environment variable. This will be passed to `Deno.openKv` as is, so `""` or
+ * `undefined` will open the database in the global namespace (backed by SQLite
+ * in Deno CLI environments, or FoundationDB when in Deno Deploy environments).
+ * It also supports `:memory:` for an in-memory instance, just like SQLite.
+ */
+export const DENO_KV_PATH = Deno.env.get("DENO_KV_PATH") || undefined;
+
+/**
+ * The batch size used during batched atomic operations with blob data.
+ * @default {10}
+ */
+export const BATCH_SIZE = 10;
+
+/**
+ * The maximum chunk size (in bytes) for binary file data. Any incoming binary
+ * data that exceeds this byte length will be processed via the blob algorithm.
+ * Currently, Deno KV only supports values of ~63KB per entry, hence the value
+ * being `63_000`.
+ */
+export const CHUNK_SIZE = 63_000;
+
+/** The identifying key used to tag a partial chunk of a blob data. */
+export const BLOB_KEY = "__BLOB__";
+
+// #endregion Deno KV
+
+// #region GitHub Actions
+
+/** Used for piping outputs to the GitHub Actions workflow. */
+export const GITHUB_OUTPUT = Deno.env.get("GITHUB_OUTPUT") || undefined;
+
+/** Used for piping environment variables to the GitHub Actions workflow. */
+export const GITHUB_ENV = Deno.env.get("GITHUB_ENV") || undefined;
+
+// #endregion GitHub Actions
+
+// #region F1 Scraper
+
 /** DO NOT CHANGE THIS */
 const BASE_URL = "https://oxblue.com/archive/a4ed2c099b4f3d942fd3d69702cd6d6b";
 
 /** The size of the image to scrape. */
-export const IMAGE_SIZE: `${number}x${number}` = "1024x768";
+export const IMAGE_SIZE = "1024x768";
 
 /** The endpoint URL for the live photo stream we will scrape. */
 export const IMAGE_URL = `${BASE_URL}/${IMAGE_SIZE}.jpg` as const;
@@ -55,4 +97,13 @@ export const FILENAME = "{HH}_{mm}_{ss}.jpg";
  */
 export const LATEST = "latest.jpg";
 
-export let DEBUG_MODE: boolean = Boolean(Deno.env.get("DEBUG"));
+/**
+ * Delay time in milliseconds to re-attempt a scrape. This only applies if the
+ * image returned by the scrape is the same as the previous one, which means
+ * the scrape was likely triggered before the image was updated. In this case,
+ * it will retry up to 3 times, waiting this amount between attempts, before
+ * giving up altogether.
+ */
+export const DELAY = 60_000;
+
+// #endregion F1 Scraper

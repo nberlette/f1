@@ -1,58 +1,78 @@
 import {
   BASEDIR,
+  DELAY,
   FILENAME,
-  IMAGE_URL as url,
+  IMAGE_URL,
   LATEST,
   PATHNAME,
 } from "./constants.ts";
+import { bytes, dirname, fmt, mkdir, setOutput, sleep } from "./helpers.ts";
+import { Image } from "./image.ts";
 
-import { bytes, dirname, fmt, ln, mkdir, sizeof } from "./helpers.ts";
+const attempt = { read: 0, write: 0, max: 3 };
 
-const now = new Date();
+export async function scrape() {
+  const now = new Date();
+  const dir = fmt(`${BASEDIR}/${PATHNAME}`, { now });
+  const file = fmt(FILENAME, { now });
+  const path = `${dir}/${file}`.replace(/[^a-z0-9-_./]/gi, "");
+  const latest = `${BASEDIR}/${LATEST}`;
 
-const dir = fmt(`${BASEDIR}/${PATHNAME}`, now);
+  /** Fetches the latest image data as a Uint8Array. */
+  async function read(
+    url: string,
+    cachebuster = +Date.now() + "",
+  ): Promise<Image> {
+    try {
+      const res = await fetch(`${url}?ts=${cachebuster}`);
+      return await Image.fromStream(res.body!);
+    } catch {
+      if (attempt.read++ < attempt.max) {
+        const tries = attempt.max - attempt.read;
+        const factor = Math.max(16, 1 << attempt.read);
+        console.log(`⏱️ ERROR · Will retry in ${factor}s \x1b[2m(${tries} attempts remaining)\x1b[0m`);
+        return await sleep(1000 * factor, read, url);
+      } else {
+        throw new Error(`Scrape failed. Unable to fetch image.`);
+      }
+    }
+  }
 
-const file = fmt(FILENAME, now);
+  /** Writes the image data to `./assets` and symlinks `latest.jpg` */
+  async function write(img: Image): Promise<void> {
+    const size = img.size;
+    const last = await Deno.readFile(latest);
 
-const path = `${dir}/${file}`.replace(/[^a-z0-9-_./]/gi, "");
+    if (img.equals(last)) {
+      if (attempt.write++ >= attempt.max) throw new Error(`Scrape failed. Unable to find fresh content.`);
 
-const latest = fmt(`${BASEDIR}/${LATEST}`, now);
+      Deno.utimeSync(latest, now, now);
 
-/**mm Fetches the latest image data as a Uint8Array. */
-export async function read(url: string, cachebuster = +Date.now() + "") {
-  const res = await fetch(`${url}?ts=${cachebuster}`);
-  const { ok, status, statusText } = res;
-  if (ok) return new Uint8Array(await res.arrayBuffer());
-
-  throw new Error(`Scrape failed. Response: HTTP ${status} (${statusText})`);
-}
-
-/** Writes the image data to `./assets` and symlinks `latest.jpg` */
-export async function write(data: Uint8Array): Promise<void> {
-  const size = data.byteLength;
-
-  await mkdir(dirname(path));
-  await Deno.writeFile(path, data);
-
-  console.log(
-    `🆕 WROTE \x1b[92m${bytes(size)}\x1b[0;2m → \x1b[0;1;4;34m${path}\x1b[0m`,
-  );
-
-  const diff = size - await sizeof(latest);
-  if (diff != 0) {
-    const result = await ln(path, latest);
-    if (result) {
+      const time = Math.floor(DELAY / 1e3);
+      const tries = attempt.max - attempt.write;
       console.log(
-        `🔗 LINK ${path} → \x1b[1;4;33m${latest}\x1b[0;2m • \x1b[0;1;${
+        `⏱️ UNCHANGED · Will retry in ${time}s... \x1b[2m(${tries} attempts remaining)\x1b[0m`,
+      );
+
+      return await sleep(DELAY, scrape);
+    } else {
+      mkdir(dirname(path));
+
+      await img.writeFile(path);
+      console.log(`🆕 WROTE ${path} \x1b[92m↑ ${fmt.bytes(size)}\x1b[0m`);
+
+      setOutput("filename", path);
+
+      await img.writeFile(latest);
+      const diff = size - last.byteLength;
+      console.log(
+        `🆙 UPDATED \x1b[1;4;33m${latest}\x1b[0;2m \x1b[0;1;${
           diff < 0 ? 91 : 92
-        }m${diff < 0 ? "↓" : "↑"} \x1b[1;4m${bytes(diff)}\x1b[0m`,
+        }m${diff < 0 ? "↓" : "↑"} \x1b[4m${bytes(diff)}\x1b[0m`,
       );
     }
   }
-  // write the new image path to stdout for GitHub Actions to pick up
-  console.log(`::set-output name=filename::${path}`);
-}
 
-export async function scrape() {
-  await read(url).then(write);
+  const image = await read(IMAGE_URL);
+  await write(image);
 }
