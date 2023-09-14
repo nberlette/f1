@@ -1,7 +1,7 @@
 name: Scrape
 on:
   schedule:
-    - cron: "*/7 * * * *"
+    - cron: "*/8 * * * *"
   workflow_dispatch:
 jobs:
   scrape:
@@ -19,15 +19,17 @@ jobs:
           deno-version: v1.x
 
       - id: scrape
-        name: "(run) main.ts"
-        run: deno run --unstable --allow-all main.ts
+        name: "(run) deno task scrape"
+        run: deno task scrape
 
       - name: "upload artifacts"
         uses: actions/upload-artifact@v3
         with:
           path: ${{ steps.scrape.outputs.filename }}
 
-      - name: "commit + push"
+      - 
+        if: ${{ success() }}
+        name: "commit + push"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
