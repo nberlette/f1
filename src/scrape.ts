@@ -41,7 +41,7 @@ export async function scrape() {
   /** Writes the image data to `./assets` and symlinks `latest.jpg` */
   async function write(img: Image): Promise<void> {
     const size = img.size;
-    const last = await Deno.readFile(latest);
+    const last = await Image.fromFile(latest);
 
     if (img.equals(last)) {
       if (attempt.write++ >= attempt.max) throw new Error(`Scrape failed. Unable to find fresh content.`);
