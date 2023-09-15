@@ -1,4 +1,4 @@
-import { GITHUB_ENV, GITHUB_OUTPUT } from "../constants.ts";
+import { GITHUB_ENV, GITHUB_OUTPUT } from "../env.ts";
 import { encode } from "./encode.ts";
 
 /**
@@ -35,12 +35,11 @@ export function setOutput(key: string, value: string): boolean {
  * using the legacy syntax instead.
  */
 export function setEnv(key: string, value: string): boolean {
-  const env = GITHUB_ENV;
   value = `${value.replace(/[\r?\n]+$/, "")}\n`;
 
   try {
-    if (env) {
-      const file = Deno.openSync(env, { create: true, append: true });
+    if (GITHUB_ENV) {
+      const file = Deno.openSync(GITHUB_ENV, { create: true, append: true });
       file.writeSync(encode(`${key}=${value}`));
       file.close();
       return true;
