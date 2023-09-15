@@ -2,19 +2,31 @@
 
 ## Capturing live photos of the Las Vegas Formula 1 track construction
 
-This is a simple automated image scraper, designed to capture live photos of the Formula 1 track that's being constructed 
-in Las Vegas, Nevada for the Grand Prix race in November, 2023. It was developed as an [open source project by **Nicholas Berlette**](https://github.com/nberlette/f1)
-using [**TypeScript**](https://typescriptlang.org) and [**Deno**](https://deno.land/manual), and is fully automated by [GitHub Actions](https://github.com/nberlette/f1/actions).
-It requires no human interaction to operate, and as long as the construction camera feed stays active, it will capture a new photo at 10 minutes intervals.
+This is a simple automated image scraper, designed to capture live photos of the
+Formula 1 track that's being constructed in Las Vegas, Nevada for the Grand Prix
+race in November, 2023. It was developed as an
+[open source project by **Nicholas Berlette**](https://github.com/nberlette/f1)
+using [**TypeScript**](https://typescriptlang.org) and
+[**Deno**](https://deno.land/manual), and is fully automated by
+[GitHub Actions](https://github.com/nberlette/f1/actions). It requires no human
+interaction to operate, and as long as the construction camera feed stays
+active, it will capture a new photo at 10 minutes intervals.
 
-The photos are stored in a public [**GitHub Repository**](https://github.com/nberlette/f1), and will ultimately be compiled into a timelapse once the track is completed. 
+The photos are stored in a public
+[**GitHub Repository**](https://github.com/nberlette/f1), and will ultimately be
+compiled into a timelapse once the track is completed.
 
-> This is a personal project, with no commercial interests or any form of monetization, and was built purely out for educational and historical purposes. 
-> As of August 31st, it was amassed **over 11,111 photos** as of August 30th!
+> This is a personal project, with no commercial interests or any form of
+> monetization, and was built purely out for educational and historical
+> purposes. As of August 31st, it was amassed **over 11,111 photos** as of
+> August 30th!
 
 ### [**Star it on GitHub! ⭐**](https://github.com/nberlette/f1/stargazers)
 
-If you find this project intriguing, consider interacting with it on GitHub. By starring the repository, you can help it gain more visibility. If you have a suggestion or want to report a bug, feel free to open an issue or contribute to the project by making a pull request.
+If you find this project intriguing, consider interacting with it on GitHub. By
+starring the repository, you can help it gain more visibility. If you have a
+suggestion or want to report a bug, feel free to open an issue or contribute to
+the project by making a pull request.
 
 Thanks for stopping by!
 
@@ -55,12 +67,15 @@ Thanks for stopping by!
 </tbody>
 </table>
 
-
 ---
 
 ### Built with Deno
 
-The project is powered by Deno, offering secure JavaScript runtime with first-class TypeScript support. The logic behind the image scraping resides primarily in the `src/scrape.ts` file in the project repository. I'm working on a user interface for viewing the images that should be completed soon, so check back here frequently!
+The project is powered by Deno, offering secure JavaScript runtime with
+first-class TypeScript support. The logic behind the image scraping resides
+primarily in the `src/scrape.ts` file in the project repository. I'm working on
+a user interface for viewing the images that should be completed soon, so check
+back here frequently!
 
 ---
 
