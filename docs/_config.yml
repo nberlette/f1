@@ -1,0 +1,13 @@
+title: "🏎️ F1 Live Photo Scraper by Nicholas Berlette"
+description: "Automatically captured real-time photos of the Formula 1 track's construction in Las Vegas. Built with TypeScript, powered by Deno, and automated by GitHub Actions."
+baseurl: "/f1"
+author:
+  name: Nicholas Berlette
+  email: nick@berlette.com
+
+theme: minima
+
+minima:
+  skin: dark
+  social_links:
+    - { platform: github, user_url: "https://github.com/nberlette/f1" }
