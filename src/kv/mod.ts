@@ -5,5 +5,7 @@ export * from "./blobs.ts";
 export const kv = await Deno.openKv(DENO_KV_PATH);
 
 addEventListener("unload", () => {
-  try { kv.close() } catch { /* ignore */ }
+  try {
+    kv.close();
+  } catch { /* ignore */ }
 });

@@ -6,17 +6,18 @@ export const dupes = new Set<string>();
 const { folderName: _oldFolderName } = Image;
 
 export async function dedupe(path: string | URL) {
-  Image.folderName = path.toString().split(/(?<=[a-z])[/](?=\w+)/i).shift() ?? "assets";
-  for await(const item of Deno.readDir(path)) {
-    if(item.isDirectory) {
+  Image.folderName = path.toString().split(/(?<=[a-z])[/](?=\w+)/i).shift() ??
+    "assets";
+  for await (const item of Deno.readDir(path)) {
+    if (item.isDirectory) {
       await dedupe(`${path}/${item.name}`);
-    } else if(item.isFile) {
-      if(item.name.endsWith(".jpg")) {
-        if(item.name === "latest.jpg") continue;
+    } else if (item.isFile) {
+      if (item.name.endsWith(".jpg")) {
+        if (item.name === "latest.jpg") continue;
         let img: Image | null = null;
         try {
           img = await Image.fromFile(`${path}/${item.name}`);
-          if(table.has(img.hash) && table.get(img.hash) !== img.path) {
+          if (table.has(img.hash) && table.get(img.hash) !== img.path) {
             dupes.add(img.path);
             await img.deleteFile();
             await img.delete();
@@ -26,7 +27,7 @@ export async function dedupe(path: string | URL) {
           } else {
             table.set(img.hash, img.path);
           }
-        } catch(err) {
+        } catch (err) {
           console.warn(err);
         }
       }

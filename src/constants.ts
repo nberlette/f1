@@ -39,7 +39,7 @@ export const ATTEMPTS = 4;
 export const IMAGE_SIZE = "1024x768";
 
 /** The endpoint URL for the live photo stream we will scrape. */
-export const IMAGE_URL = 
+export const IMAGE_URL =
   "https://oxblue.com/archive/a4ed2c099b4f3d942fd3d69702cd6d6b/1024x768.jpg";
 
 // #endregion Source Config
@@ -48,13 +48,15 @@ export const IMAGE_URL =
 
 /** The text to display when the image is updated. */
 export const TEXT = {
-  updated: `🆙 UPDATED \u001b[1;4;33m{path}\u001b[0;2m \u001b[0;1;{color}m{arrow} \u001b[4m{diff}\u001b[0m`,
+  updated:
+    `🆙 UPDATED \u001b[1;4;33m{path}\u001b[0;2m \u001b[0;1;{color}m{arrow} \u001b[4m{diff}\u001b[0m`,
   wrote: `🆕 WROTE {path} \u001b[{color}m↑ {size}\u001b[0m`,
   created: `🆕 CREATED {path} \u001b[{color}m↑ {size}\u001b[0m`,
   error: `🚨 \u001b[1;31mERROR\u001b[0m \u001b[{color}m{message}\u001b[0m`,
-  unchanged: `⏱️ UNCHANGED · retrying in {time}s... \u001b[2m({attempts} attempts remaining)\u001b[0m`,
-  fetch_error: `⏱️ FETCH ERROR · retrying in {time}s... \u001b[2m({attempts} attempts remaining)\u001b[0m`,
-
+  unchanged:
+    `⏱️ UNCHANGED · retrying in {time}s... \u001b[2m({attempts} attempts remaining)\u001b[0m`,
+  fetch_error:
+    `⏱️ FETCH ERROR · retrying in {time}s... \u001b[2m({attempts} attempts remaining)\u001b[0m`,
 } as const;
 
 /**
@@ -74,7 +76,7 @@ export const BASEDIR = "./assets";
  * | `%Y` or `{Y}` | current year    |
  * | `%m` or `{m}` | current month   |
  * | `%d` or `{d}` | current day     |
- * | `%H` or `{H}` | current hour    |  
+ * | `%H` or `{H}` | current hour    |
  * | `%M` or `{M}` | current minute  |
  * | `%S` or `{S}` | current second  |
  * | `%Z` or `{Z}` | timezone offset |
@@ -105,4 +107,4 @@ export const FILENAME = "{HH}_{mm}_{ss}.jpg";
  */
 export const LATEST = "latest.jpg";
 
-// #endregion 
+// #endregion

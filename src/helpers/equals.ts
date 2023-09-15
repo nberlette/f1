@@ -1,4 +1,4 @@
-import { isDataView, isBufferSource } from "./types.ts";
+import { isBufferSource, isDataView } from "./types.ts";
 
 /**
  * Check whether two binary BufferSource objects are equal to each other in
