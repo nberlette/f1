@@ -3,6 +3,19 @@ import { type Atomic, atomic } from "./atomic.ts";
 
 type Key = Deno.KvKeyPart | Deno.KvKeyPart[];
 
+interface GetOptions {
+  consistency?: Deno.KvConsistencyLevel | undefined;
+  stream?: boolean;
+}
+
+interface GetStreamOptions extends GetOptions {
+  stream: true;
+}
+
+interface SetOptions {
+  expireIn?: number;
+}
+
 export class Blobs {
   #kv: Deno.Kv;
   #prefix: Deno.KvKey = [];
@@ -29,21 +42,15 @@ export class Blobs {
     }
   }
 
-  /** 
+  /**
    * Retrieve a binary object from the store with a given key that has been
    * {@linkcode Blobs.set}.
    *
    * When setting the option `stream` to `true`, a {@linkcode ReadableStream} is
-   * returned to read the blob in chunks of {@linkcode Uint8Array}, otherwise 
+   * returned to read the blob in chunks of {@linkcode Uint8Array}, otherwise
    * the function resolves with a single {@linkcode Uint8Array}.
    */
-  get(
-    key: Deno.KvKey,
-    options: {
-      consistency?: Deno.KvConsistencyLevel | undefined;
-      stream: true;
-    },
-  ): ReadableStream<Uint8Array>;
+  get(key: Deno.KvKey, options: GetStreamOptions): ReadableStream<Uint8Array>;
 
   /**
    * Retrieve a binary object from the store with a given key that has been
@@ -53,13 +60,7 @@ export class Blobs {
    * returned to read the blob in chunks of {@linkcode Uint8Array}, otherwise
    * the function resolves with a single {@linkcode Uint8Array}.
    */
-  get(
-    key: Deno.KvKey,
-    options?: {
-      consistency?: Deno.KvConsistencyLevel | undefined;
-      stream?: boolean;
-    },
-  ): Promise<Uint8Array | null>;
+  get(key: Deno.KvKey, options?: GetOptions): Promise<Uint8Array | null>;
 
   /**
    * Retrieve a binary object from the store with a given key that has been
@@ -69,13 +70,7 @@ export class Blobs {
    * returned to read the blob in chunks of {@linkcode Uint8Array}, otherwise
    * the function resolves with a single {@linkcode Uint8Array}.
    */
-  get(
-    key: Deno.KvKey,
-    options: {
-      consistency?: Deno.KvConsistencyLevel | undefined;
-      stream?: boolean;
-    } = {},
-  ): ReadableStream<Uint8Array> | Promise<Uint8Array | null> {
+  get(key: Deno.KvKey, options: GetOptions = {}) {
     key = this.#key(key);
     if (options.stream) return Blobs.asStream(this.#kv, key, options);
     return Blobs.asUint8Array(this.#kv, key, options);
@@ -99,13 +94,13 @@ export class Blobs {
   async set(
     key: Deno.KvKey,
     blob: ArrayBufferLike | ReadableStream<Uint8Array>,
-    options?: { expireIn?: number },
+    options?: SetOptions,
   ): Promise<void> {
     const prefix = this.#key(key, Blobs.KEY);
     const items = await Blobs.keys(this.#kv, { prefix });
     key = this.#key(key);
     let op = atomic(this.#kv);
-    let count;
+    let count = 0;
     if (blob instanceof ReadableStream) {
       [count, op] = await Blobs.writeStream(op, key, blob, options);
     } else {
@@ -119,6 +114,15 @@ export class Blobs {
     selector: Deno.KvListSelector,
     options?: Deno.KvListOptions,
   ): Promise<Deno.KvKey[]> {
+    if ("prefix" in selector) {
+      selector.prefix = this.#key(selector.prefix);
+    }
+    if ("start" in selector) {
+      selector.start = this.#key(selector.start);
+    }
+    if ("end" in selector) {
+      selector.end = this.#key(selector.end);
+    }
     return await Blobs.keys(this.#kv, selector, options);
   }
 
@@ -208,11 +212,11 @@ export class Blobs {
     return [...prefixes].map((part) => [...prefix, part]);
   }
 
-  private static readonly BATCH = 10;
-  private static readonly CHUNK = 63_000;
-  private static readonly KEY = "__BLOB__";
+  static readonly BATCH = 10;
+  static readonly CHUNK = 63_000;
+  static KEY = "__BLOB__";
 
-  private static asStream(kv: Deno.Kv, key: Deno.KvKey, options: {
+  protected static asStream(kv: Deno.Kv, key: Deno.KvKey, options: {
     consistency?: Deno.KvConsistencyLevel | undefined;
   }): ReadableStream<Uint8Array> {
     let list: Deno.KvListIterator<Uint8Array> | null = null;
@@ -241,7 +245,7 @@ export class Blobs {
     });
   }
 
-  private static async asUint8Array(
+  protected static async asUint8Array(
     kv: Deno.Kv,
     key: Deno.KvKey,
     options: { consistency?: Deno.KvConsistencyLevel | undefined },
@@ -267,7 +271,7 @@ export class Blobs {
     return found ? value : null;
   }
 
-  private static deleteKeys(
+  protected static deleteKeys(
     op: Atomic,
     key: Deno.KvKey,
     count: number,
@@ -277,7 +281,7 @@ export class Blobs {
     return op;
   }
 
-  private static writeArrayBuffer(
+  protected static writeArrayBuffer(
     op: Atomic,
     key: Deno.KvKey,
     blob: ArrayBufferLike,
@@ -296,7 +300,7 @@ export class Blobs {
     return [count, op];
   }
 
-  private static async writeStream(
+  protected static async writeStream(
     op: Atomic,
     key: Deno.KvKey,
     stream: ReadableStream<Uint8Array>,
@@ -309,7 +313,7 @@ export class Blobs {
     return [start, op];
   }
 
-  private static addIfUnique(set: Set<Deno.KvKeyPart>, item: Uint8Array) {
+  protected static addIfUnique(set: Set<Deno.KvKeyPart>, item: Uint8Array) {
     for (const i of set) {
       if (ArrayBuffer.isView(i) && timingSafeEqual(i, item)) return;
     }
