@@ -1,8 +1,5 @@
-import { kv } from "./mod.ts";
 import { Image } from "../image.ts";
 import { sleep } from "../helpers.ts";
-
-onbeforeunload = () => kv.close();
 
 export async function reindex(path: string | URL) {
   path = path.toString().replace(/\/$/, "");
@@ -16,22 +13,23 @@ export async function reindex(path: string | URL) {
         let img: Image | null = null;
         try {
           img = await Image.fromFile(`${path}/${item.name}`);
-          await img.write();
+          if (!(await img.exists())) {
+            await img.write();
+            await sleep(
+              1,
+              () => {
+                console.log(
+                  `Wrote ${img!.path} to KV (${
+                    (img!.size / 1024).toFixed(1)
+                  } KB)`,
+                );
+                img = null;
+              },
+            );
+          }
         } catch (err) {
-          console.error(err);
+          console.warn(err);
           // gracefully continue processing
-        } finally {
-          await sleep(
-            5,
-            () => {
-              console.log(
-                `Wrote ${img!.path} to KV (${
-                  (img!.size / 1024).toFixed(1)
-                } KB)`,
-              );
-              img = null;
-            },
-          );
         }
       }
     }

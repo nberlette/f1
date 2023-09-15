@@ -1,4 +1,4 @@
-import { DENO_KV_PATH } from "../constants.ts";
+import { DENO_KV_PATH } from "../env.ts";
 export * from "./reindex.ts";
 export * from "./blobs.ts";
 
