@@ -28,13 +28,12 @@ export async function scrape() {
   const path = `${dir}/${file}`.replace(/[^a-z0-9-_./]/gi, "");
   const latest = `${BASEDIR}/${LATEST}`;
 
+  mkdir(dir);
+
   /** Fetches the latest image data as a Uint8Array. */
-  async function read(
-    url: string,
-    cachebuster = +Date.now() + "",
-  ): Promise<Image> {
+  async function read(url: string): Promise<Image> {
     try {
-      const res = await fetch(`${url}?ts=${cachebuster}`);
+      const res = await fetch(`${url}?ts=${Date.now()}`);
       return await Image.fromStream(res.body!);
     } catch {
       TRY.read++;
@@ -73,15 +72,14 @@ export async function scrape() {
         );
       }
 
-      Deno.utimeSync(latest, now, now);
+      await Deno.utime(latest, now, now);
 
       const time = Math.floor(DELAY / 1e3);
       const attempts = TRY.max - TRY.write;
       console.log(fmt.string(TEXT.unchanged, { time, attempts }));
 
       return await sleep(DELAY, scrape);
-    } else {
-      mkdir(dirname(path));
+    }
 
     await img.write(); // KV
     console.log(
@@ -119,3 +117,5 @@ export async function scrape() {
   const image = await read(IMAGE_URL);
   await write(image);
 }
+
+export default scrape;
