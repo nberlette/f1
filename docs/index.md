@@ -56,10 +56,10 @@ The track is slated for completion in October 2023. The race is in November.
 
 The photos are stored in the public
 [**GitHub Repository**](https://github.com/nberlette/f1), and persisted to a
-[FoundationDB-backed **Deno KV** database][deno-kv]. 
+[FoundationDB-backed **Deno KV** database][deno-kv].
 
-The first scrape happened on June 3rd, 2023. As of September 16th, it has amassed **over 13,000 photos** and counting, totalling just over **1.0GB**!
-
+The first scrape happened on June 3rd, 2023. As of September 16th, it has
+amassed **over 13,000 photos** and counting, totalling just over **1.0GB**!
 
 ### Who made this?
 
