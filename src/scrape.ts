@@ -26,7 +26,9 @@ export async function scrape() {
   const dir = fmt.string(`${BASEDIR}/${PATHNAME}`, { now });
   const file = fmt.string(FILENAME, { now });
   const path = `${dir}/${file}`.replace(/[^a-z0-9-_./]/gi, "");
-  const latest = `${BASEDIR}/${LATEST}`;
+
+  const latestPath = `${BASEDIR}/${LATEST}`;
+  const latest = await Image.fromFile(latestPath, true);
 
   mkdir(dir);
 
@@ -48,9 +50,10 @@ export async function scrape() {
       const attempts = TRY.max - TRY.read;
       const factor = Math.max(16, 1 << TRY.read);
       console.log(
-        fmt.string(TEXT.fetch_error, {
-          time: Math.floor(DELAY / 1e3),
-          attempts: attempts,
+        fmt.string(TEXT.retry, {
+          label: "FETCH ERROR",
+          time: factor,
+          attempts,
         }),
       );
       return await sleep(1000 * factor, read, url);
@@ -60,10 +63,10 @@ export async function scrape() {
   /** Writes the image data to `./assets` and symlinks `latest.jpg` */
   async function write(img: Image): Promise<void> {
     const size = img.size;
-    const last = await Image.fromFile(latest, true);
 
-    if (img.equals(last)) {
-      if (TRY.write++ >= TRY.max) {
+    if (img.equals(latest)) {
+      TRY.write++;
+      if (TRY.failed) {
         throw new Error(
           fmt.string(TEXT.error, {
             message: "Scrape failed. Image unchanged.",
@@ -72,11 +75,13 @@ export async function scrape() {
         );
       }
 
-      await Deno.utime(latest, now, now);
+      await Deno.utime(latestPath, now, now);
 
       const time = Math.floor(DELAY / 1e3);
       const attempts = TRY.max - TRY.write;
-      console.log(fmt.string(TEXT.unchanged, { time, attempts }));
+      console.log(
+        fmt.string(TEXT.retry, { label: "UNCHANGED", time, attempts }),
+      );
 
       return await sleep(DELAY, scrape);
     }
@@ -99,23 +104,23 @@ export async function scrape() {
       }),
     );
 
-    setOutput("filename", path);
-
-    await img.writeFile(latest); // FS
-    const diff = size - last.byteLength;
-    const arrow = diff < 0 ? "↓" : "↑";
-    const color = diff < 0 ? 91 : 92;
+    await img.writeFile(latestPath); // FS
+    const diff = size - latest.size;
 
     console.log(fmt.string(TEXT.updated, {
-      path: latest,
+      path: latestPath,
       diff: fmt.bytes(diff),
-      arrow,
-      color,
+      arrow: diff < 0 ? "↓" : "↑",
+      color: diff < 0 ? 91 : 92,
     }));
+
+    setOutput("filename", path);
+    setOutput("size", size + "");
+    setOutput("diff", diff + "");
+    setOutput("timestamp", img.date.toJSON());
+    setOutput("hash", img.hash);
+    setOutput("key", JSON.stringify(img.key));
   }
 
-  const image = await read(IMAGE_URL);
-  await write(image);
+  await read(IMAGE_URL).then(write);
 }
-
-export default scrape;

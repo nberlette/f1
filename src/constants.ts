@@ -53,10 +53,8 @@ export const TEXT = {
   wrote: `🆕 WROTE {path} \u001b[{color}m↑ {size}\u001b[0m`,
   created: `🆕 CREATED {path} \u001b[{color}m↑ {size}\u001b[0m`,
   error: `🚨 \u001b[1;31mERROR\u001b[0m \u001b[{color}m{message}\u001b[0m`,
-  unchanged:
-    `⏱️ UNCHANGED · retrying in {time}s... \u001b[2m({attempts} attempts remaining)\u001b[0m`,
-  fetch_error:
-    `⏱️ FETCH ERROR · retrying in {time}s... \u001b[2m({attempts} attempts remaining)\u001b[0m`,
+  retry:
+    `⏱️ {label} · retrying in {time}s... \u001b[2m({attempts} attempts remaining)\u001b[0m`,
 } as const;
 
 /**
