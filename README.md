@@ -6,14 +6,14 @@ This is an automated image scraper powered by Deno and GitHub Actions. It
 captures a live photo every 15 minutes of the [**Formula 1**][formula1] track
 being built in Las Vegas, NV.
 
-Image data is persisted in binary form using [Deno KV][deno-kv], each with a
+Image data is persisted in binary form using [**Deno KV**][deno-kv], each with a
 hard copy `.jpg` file located in the repository for additional redundancy and
 ease of access. The images are being compiled into Timelapse videos using
 ffmpeg.
 
 The track is slated for completion in October 2023. The race is in November.
 
-</div><br>
+</div>
 
 ## Latest Image
 
@@ -124,14 +124,14 @@ data, this project will continue to auto-update.
            compared against the latest image.
          - If they are still equal, the job will fail and the runner will be
            terminated.
-      2. Now that we have a fresh image, it is first written to the `Deno KV`
-         database using the [`Image.write()`][src-image.ts] method and logged to
-         the console.
+      2. Now that we have a fresh image, it is first written to the
+         [`Deno KV`][deno-kv] database using the [`Image.write()`][src-image.ts]
+         method and logged to the console.
       3. The image is then written to the filesystem using the
          [`Image.writeFile()`][src-image.ts] method, and also logged to the
          console.
-      4. The image is finally written to the [`./assets/latest.jpg`] file, and
-         the updated image size difference is logged to the console.
+      4. The image is finally written to the [`./assets/latest.jpg`][latest-img]
+         file, and the updated image size difference is logged to the console.
       5. The [`setOutput`][src-helpers-actions.ts] method is called with the
          filename of the new image, so the GitHub Actions runner can use it as
          an output variable.
@@ -235,8 +235,7 @@ through the completion of the track.
 ### Future Plans
 
 A frontend display for viewing the images as a growing timelapse is under
-development. This will also help create a timelapse video once the track build
-is complete. Check [`n.berlette.com/f1`](https://n.berlette.com/f1) for updates.
+development. Check [`n.berlette.com/f1`](https://n.berlette.com/f1) for updates.
 
 ---
 
@@ -256,7 +255,7 @@ is complete. Check [`n.berlette.com/f1`](https://n.berlette.com/f1) for updates.
 [oxblue]: https://oxblue.com "OxBlue Construction Cameras"
 [typescript]: https://typescriptlang.org "TypeScript's Official Website"
 [deno]: https://deno.land "Deno's Official Website - A secure runtime for JavaScript and TypeScript"
-[deno-kv]: https://deno.land/manual@v1.36.0/runtime/kv "Deno KV - key-value store built directly into the Deno runtime."
+[deno-kv]: https://docs.deno.com/kv "Deno KV - key-value store built directly into the Deno runtime."
 [workflow]: https://github.com/nberlette/f1/blob/main/.github/workflows/main.yml "GitHub Actions workflow file"
 [assets]: https://github.com/nberlette/f1/tree/main/assets "View the 'assets' folder on GitHub"
 [main.ts]: https://github.com/nberlette/f1/blob/main/main.ts "View the source code for the 'main.ts' file on GitHub"
