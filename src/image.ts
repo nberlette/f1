@@ -72,8 +72,15 @@ export class Image {
     if (kv) this.#blobs = new Blobs(this.#kv = kv);
     if (date) this.#date = new Date(date);
     path ??= Image.folderName;
-    this.#path = path.toString().replace(/\/$/, "");
+    path = `./${
+      path.toString().replace(/^file:\/\//, "").replace(Deno.cwd(), "").replace(
+        /\/$/,
+        "",
+      ).replace(/^\.\//, "")
+    }`;
+    this.#path = path;
     this.#latest = Boolean(latest);
+    debug("Image.constructor", "Creating new image instance.");
     (async () => await this.sync())();
   }
 
@@ -100,12 +107,12 @@ export class Image {
 
   /** The hash of the image's underlying data buffer. */
   get hash(): string {
-    return Image.hash(this.#data!, "hex");
+    return Image.hash(this.buffer!, "hex");
   }
 
   /** The size of the image's underlying data buffer, in bytes. */
   get size(): number {
-    return this.#data?.byteLength ?? 0;
+    return this.data?.byteLength ?? 0;
   }
 
   /** An alias for {@link Image.size}, reflecting the image's size. */
@@ -124,7 +131,7 @@ export class Image {
    * ⚠️ **Note**: this file isn't guaranteed to exist, and may also be relative.
    */
   get path(): string {
-    return `${Image.dateToPath(this.date, this.latest)}`;
+    return `./${Image.dateToPath(this.date, this.latest).replace(/^\.\//, "")}`;
   }
 
   /**
