@@ -83,13 +83,13 @@ jobs:
             -metadata title="Timelapse: $dates" \
             -metadata year="${dates:0:4}" \
             -metadata description="Timelapse video for $dates" \
-            timelapse.mp4
+            daily_timelapse.mp4
 
       - name: Upload Daily Timelapse
         uses: actions/upload-artifact@v2
         with:
-          name: timelapse.mp4
-          path: timelapse.mp4
+          name: daily_timelapse.mp4
+          path: daily_timelapse.mp4
 
   weekly:
     if: ${{github.event_name=='schedule'&&github.event.schedule=='30 6 * * SUN'}}
@@ -127,10 +127,10 @@ jobs:
             -metadata title="Timelapse: $dates" \
             -metadata year="${dates:0:4}" \
             -metadata description="Timelapse video for $dates" \
-            timelapse.mp4
+            weekly_timelapse.mp4
 
       - name: Upload Weekly Timelapse
         uses: actions/upload-artifact@v2
         with:
-          name: timelapse.mp4
-          path: timelapse.mp4
+          name: weekly_timelapse.mp4
+          path: weekly_timelapse.mp4
