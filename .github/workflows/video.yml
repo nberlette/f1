@@ -1,0 +1,136 @@
+name: Timelapse
+on:
+  schedule:
+    - cron: "45 6 * * *"
+    - cron: "30 6 * * SUN"
+
+jobs:
+  metadata:
+    runs-on: macos-latest
+    outputs:
+      daily_files: ${{ steps.daily.outputs.files }}
+      daily_dates: ${{ steps.daily.outputs.dates }}
+      weekly_files: ${{ steps.weekly.outputs.files }}
+      weekly_dates: ${{ steps.weekly.outputs.dates }}
+    steps:
+      - id: daily
+        name: "(setup) collect daily items"
+        run: |
+          dates=($(cd assets && \ls --color=never -t1 --time=ctime -I "*.jpg")
+          
+          today="${dates[-1]}"
+          echo "dates=[\"${today}\"]" >> "$GITHUB_OUTPUT"
+
+          items=($(find "./assets/${today-}" -type f -name "*.jpg"))
+          files="[$(printf '"%s",' "${items[@]}" | sed 's/,$//')]"
+          echo "files=${files}" >> "$GITHUB_OUTPUT"
+      - id: weekly
+        name: "(setup) collect weekly items"
+        run: |
+          dates=($(cd assets && \ls --color=never -t1 --time=ctime -I "*.jpg")
+          
+          # collect the dates for the last 7 days, output to github output
+          dates=("${dates[@]: -7}")
+          week="[$(printf '"%s",' "${dates[@]}" | sed 's/,$//')]"
+          echo "dates=${week}" >> "$GITHUB_OUTPUT"
+
+          # collect the files for the last 7 days, output to github output
+          items=($(find "./assets/${dates[@]}" -type f -name "*.jpg"))
+          files="[$(printf '"%s",' "${items[@]}" | sed 's/,$//')]"
+          echo "files=${files}" >> "$GITHUB_OUTPUT"
+    
+  # We need to install ffmpeg to generate the timelapse video.
+  # The videos are generated on two different schedules, one is run daily at
+  # 6:45am UTC, generated from the previous day's images, while the weekly video
+  # is generated from the previous week's images on each Sunday. In either case,
+  # the video is uploaded to GitHub's artifact storage with a rentention period
+  # of 90 days. The runner is setup to run on macos-latest, since it benefits
+  # from a memory allocation of 14GB compared to a 7GB allocation for Ubuntu.
+
+  daily:
+    if: ${{github.event_name=='schedule'&&github.event.schedule=='45 6 * * *'}}
+    name: "Generate Timelapse: Today's Images"
+    runs-on: macos-latest
+    steps:
+      - name: "(setup) checkout repository"
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: "(setup) install ffmpeg"
+        run: brew install ffmpeg
+
+      - name: "(generate) daily timelapse video"
+        env:
+          FILES: ${{ steps.metadata.outputs.daily_files }}
+          DATES: ${{ steps.metadata.outputs.daily_dates }}
+        run: |
+          files=$(jq -r '.[]' <<< "${FILES}")
+          dates=$(jq -r '.[0]' <<< "${DATES}")
+          ffmpeg \
+            -r 30 \
+            -i "${files[@]-}" \
+            -s 1920x1080 \
+            -vcodec libx264 \
+            -crf 17 \
+            -pix_fmt yuv420p \
+            -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
+            -y \
+            -an \
+            -preset slow \ 
+            -tune film \
+            -movflags +faststart \
+            -metadata title="Timelapse: $dates" \
+            -metadata year="${dates:0:4}" \
+            -metadata description="Timelapse video for $dates" \
+            timelapse.mp4
+
+      - name: Upload Daily Timelapse
+        uses: actions/upload-artifact@v2
+        with:
+          name: timelapse.mp4
+          path: timelapse.mp4
+
+  weekly:
+    if: ${{github.event_name=='schedule'&&github.event.schedule=='30 6 * * SUN'}}
+    name: "Generate Timelapse: Week's Images"
+    runs-on: macos-latest
+    steps:
+      - name: "(setup) checkout repository"
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: "(setup) install ffmpeg"
+        run: brew install ffmpeg
+
+      - name: "(generate) weekly timelapse video"
+        env:
+          FILES: ${{ steps.metadata.outputs.weekly_files }}
+          DATES: ${{ steps.metadata.outputs.weekly_dates }}
+        run: |
+          files=$(jq -r '.[]' <<< "${FILES}")
+          dates=$(jq -r '.[0]' <<< "${DATES}")
+          ffmpeg \
+            -r 30 \
+            -i "${files[@]-}" \
+            -s 1920x1080 \
+            -vcodec libx264 \
+            -crf 17 \
+            -pix_fmt yuv420p \
+            -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
+            -y \
+            -an \
+            -preset slow \ 
+            -tune film \
+            -movflags +faststart \
+            -metadata title="Timelapse: $dates" \
+            -metadata year="${dates:0:4}" \
+            -metadata description="Timelapse video for $dates" \
+            timelapse.mp4
+
+      - name: Upload Weekly Timelapse
+        uses: actions/upload-artifact@v2
+        with:
+          name: timelapse.mp4
+          path: timelapse.mp4
