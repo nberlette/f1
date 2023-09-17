@@ -1,4 +1,5 @@
 export * from "./actions.ts";
+export * from "./dedupe.ts";
 export * from "./encode.ts";
 export * from "./equals.ts";
 export * as fmt from "./format.ts";
