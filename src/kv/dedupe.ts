@@ -3,9 +3,9 @@ import { Image } from "../image.ts";
 export const table = new Map<string, string>();
 export const dupes = new Set<string>();
 
-const { folderName: _oldFolderName } = Image;
-
 export async function dedupe(path: string | URL) {
+  const _oldFolderName = Image.folderName;
+
   Image.folderName = path.toString().split(/(?<=[a-z])[/](?=\w+)/i).shift() ??
     "assets";
   for await (const item of Deno.readDir(path)) {

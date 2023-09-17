@@ -6,3 +6,9 @@ export * from "./fs.ts";
 export * from "./path.ts";
 export * from "./sleep.ts";
 export * from "./types.ts";
+
+const DEBUG = Boolean(Deno.env.get("DEBUG"));
+
+export const debug = (...args: unknown[]) => {
+  if (DEBUG) console.log("[DEBUG]", ...args);
+};

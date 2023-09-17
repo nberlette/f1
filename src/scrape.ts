@@ -9,7 +9,7 @@ import {
   PATHNAME,
   TEXT,
 } from "./constants.ts";
-import { fmt, mkdir, setOutput, sleep } from "./helpers.ts";
+import { debug, fmt, mkdir, setOutput, sleep } from "./helpers.ts";
 import { Image } from "./image.ts";
 
 const TRY = {
@@ -27,8 +27,11 @@ export async function scrape() {
   const file = fmt.string(FILENAME, { now });
   const path = `${dir}/${file}`.replace(/[^a-z0-9-_./]/gi, "");
 
-  const latestPath = `${BASEDIR}/${LATEST}`;
+  const latestPath = `${BASEDIR}/${LATEST}` as const;
   const latest = await Image.fromFile(latestPath, true);
+
+  debug("SCRAPE");
+  debug({ now, dir, file, path, latestPath, latest });
 
   mkdir(dir);
 
@@ -36,10 +39,12 @@ export async function scrape() {
   async function read(url: string): Promise<Image> {
     try {
       const res = await fetch(`${url}?ts=${Date.now()}`);
-      return await Image.fromStream(res.body!);
+      const image = await Image.fromStream(res.body!);
+      debug("scrape.read(): incoming image");
+      debug(image);
+      return image;
     } catch {
-      TRY.read++;
-      if (TRY.failed) {
+      if (++TRY.read >= TRY.max) {
         throw new Error(
           fmt.string(TEXT.error, {
             message: "Scrape failed. Unable to fetch image.",
@@ -47,16 +52,18 @@ export async function scrape() {
           }),
         );
       }
+      debug("scrape.read(): retrying...");
+      debug(TRY);
       const attempts = TRY.max - TRY.read;
-      const factor = Math.max(16, 1 << TRY.read);
+      // const factor = Math.max(16, 1 << TRY.read);
       console.log(
         fmt.string(TEXT.retry, {
           label: "FETCH ERROR",
-          time: factor,
+          time: 1,
           attempts,
         }),
       );
-      return await sleep(1000 * factor, read, url);
+      return await sleep(1000, read, url);
     }
   }
 
@@ -65,8 +72,8 @@ export async function scrape() {
     const size = img.size;
 
     if (img.equals(latest)) {
-      TRY.write++;
-      if (TRY.failed) {
+      debug("scrape.write(): image unchanged...");
+      if (++TRY.write >= TRY.max) {
         throw new Error(
           fmt.string(TEXT.error, {
             message: "Scrape failed. Image unchanged.",
@@ -75,6 +82,7 @@ export async function scrape() {
         );
       }
 
+      debug("scrape.write(): updating timestamp on latest image...");
       await Deno.utime(latestPath, now, now);
 
       const time = Math.floor(DELAY / 1e3);
@@ -83,9 +91,11 @@ export async function scrape() {
         fmt.string(TEXT.retry, { label: "UNCHANGED", time, attempts }),
       );
 
+      debug("scrape.write(): retrying...");
       return await sleep(DELAY, scrape);
     }
 
+    debug("scrape.write(): write");
     await img.write(); // KV
     console.log(
       fmt.string(TEXT.created, {
@@ -95,6 +105,7 @@ export async function scrape() {
       }),
     );
 
+    debug("scrape.write(): write file");
     await img.writeFile(path); // FS
     console.log(
       fmt.string(TEXT.wrote, {
@@ -104,8 +115,9 @@ export async function scrape() {
       }),
     );
 
+    debug("scrape.write(): write latest");
     await img.writeFile(latestPath); // FS
-    const diff = size - latest.size;
+    const diff = size - latest.byteLength;
 
     console.log(fmt.string(TEXT.updated, {
       path: latestPath,
@@ -114,6 +126,7 @@ export async function scrape() {
       color: diff < 0 ? 91 : 92,
     }));
 
+    debug("scrape.write(): set output");
     setOutput("filename", path);
     setOutput("size", size + "");
     setOutput("diff", diff + "");
@@ -122,5 +135,9 @@ export async function scrape() {
     setOutput("key", JSON.stringify(img.key));
   }
 
-  await read(IMAGE_URL).then(write);
+  debug("scrape.read(" + IMAGE_URL + ")");
+  const image = await read(IMAGE_URL);
+
+  debug("scrape.write(", image, ")");
+  await write(image);
 }

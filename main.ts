@@ -1,5 +1,4 @@
-#!/usr/bin/env -S deno run --unstable -q --allow-read=assets --allow-write=assets --allow-net=deno.land,oxblue.com --allow-env=DENO_KV_PATH,GITHUB_OUTPUT,GITHUB_ENV,DEBUG,BASEDIR
+#!/usr/bin/env -S deno run --unstable --allow-all
+import { scrape } from "./src/scrape.ts";
 
-if (import.meta.main) {
-  await import("./src/scrape.ts").then((m) => m.scrape());
-}
+if (import.meta.main) await scrape();
