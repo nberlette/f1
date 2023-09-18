@@ -44,7 +44,7 @@ export async function scrape() {
       debug(image);
       return image;
     } catch {
-      if (++TRY.read >= TRY.max) {
+      if (TRY.read++ >= TRY.max) {
         throw new Error(
           fmt.string(TEXT.error, {
             message: "Scrape failed. Unable to fetch image.",
@@ -73,7 +73,7 @@ export async function scrape() {
 
     if (img.equals(latest)) {
       debug("scrape.write(): image unchanged...");
-      if (++TRY.write >= TRY.max) {
+      if (TRY.write++ >= TRY.max) {
         throw new Error(
           fmt.string(TEXT.error, {
             message: "Scrape failed. Image unchanged.",
