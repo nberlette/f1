@@ -4,24 +4,35 @@
 
 ## Capturing live photos of the Las Vegas Formula 1 track build
 
-This is a simple automated image scraper, designed to capture live photos of the
-Formula 1 track that's being constructed in Las Vegas, Nevada for the Grand Prix
-race in November, 2023. The photos will be compiled into timelapse videos.
+This project is a purpose-built image scraper developed in TypeScript and powered by Deno. Its sole purpose is to capture a live snapshot every every ~10 minutes of the new Formula 1 race track that is currently under construction in Las Vegas, NV. 
 
-It requires no human interaction to operate, and as long as the construction
-camera feed stays active, it will capture a new photo at 10 minutes intervals.
-The track is slated for completion in October 2023. The race is in November.
+It is automated by GitHub Actions to run at regular intervals, and leverages Deno KV for data persistance. For accessibility and additional redudancy (since Deno KV is still in beta), a hard copy of each scraped image is also pushed to the repository. Once the track is completed (or whenever the live stream goes offline), **all** of the photos it has collected will be then be compiled into a timelapse video using ffmpeg. That will conclude this project and it will then be archived.
 
-[**💡 Read more about how it works**](#about) ·
-[**⭐️ Give it a star on GitHub!**][github-star]
+The actual race (officially known as the **_"Formula 1 Heineken Silver Las Vegas Grand Prix 2023"_**) will be held on **November 18th, 2023**, with practice and qualifying the two days prior. For more information on the race itself, [**see the official site here**][formula1-official-site].
 
-</div><br>
+<br><div>
+  
+ℹ️ [**Interested in how it works? Click here for more info!**](#about)  
+</div><div>
+
+🌟 [**Think this project is cool? Please star it on GitHub!**][github-star]  
+</div><div>
+
+📸 [**View the latest snapshot of the construction site**](#latest-snapshot)
+</div><div>
+
+🗓️ [**View some of the previously captured snapshots**](#previous-snapshots)
+</div></div>
+
+---
+
+![Formula 1 AI-generated fan art][artwork-4]
+
+---
 
 ## Latest Snapshot
 
 [![The latest image scraped from the Formula 1 track build in Las Vegas][latest-img]][latest-img]
-
-[**→ Click here to view the latest photo of the Las Vegas Track**][latest-img]
 
 ### Previous Snapshots
 
@@ -34,7 +45,7 @@ The track is slated for completion in October 2023. The race is in November.
 <tbody>
 <tr>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-16/22_45_35.jpg?raw=true" title="2023-09-16T22:45:35" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-16/22_45_35.jpg?raw=true" alt="2023-09-16T22:45:35" style="border-radius:8px" /></a></td>
-<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-10/22_27_03.jpg?raw=true" title="2023-09-10T22:27:03" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-10/22_27_03.jpg?raw=true" alt="2023-09-10T22:27:03" style="border-radius:8px" /></a></td>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-10/22_33_07.jpg?raw=true" title="2023-09-10T22:33:07" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-10/22_33_07.jpg?raw=true" alt="2023-09-10T22:33:07" style="border-radius:8px" /></a></td>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-04/22_49_09.jpg?raw=true" title="2023-09-04T22:49:09" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-04/22_49_09.jpg?raw=true" alt="2023-09-04T22:49:09" style="border-radius:8px" /></a></td>
 </tr>
 </tbody>
@@ -47,53 +58,17 @@ The track is slated for completion in October 2023. The race is in November.
 <tr>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-08-28/22_45_21.jpg?raw=true" title="2023-08-28T22:45:21" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-08-28/22_45_21.jpg?raw=true" alt="2023-08-28T22:45:21" style="border-radius:8px" /></a></td>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-08-21/22_45_10.jpg?raw=true" title="2023-08-21T22:45:10" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-08-21/22_45_10.jpg?raw=true" alt="2023-08-21T22:45:10" style="border-radius:8px" /></a></td>
-<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-08-14/22_42_06.jpg?raw=true" title="2023-08-14T22:42:06" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-08-14/22_42_06.jpg?raw=true" alt="2023-08-14T22:42:06" style="border-radius:8px" /></a></td>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-08-14/19_53_29.jpg?raw=true" title="2023-08-14T19:53:29" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-08-14/19_53_29.jpg?raw=true" alt="2023-08-14T19:53:29" style="border-radius:8px" /></a></td>
 </tr>
 </tbody>
 </table>
 
-## About
-
-The photos are stored in the public
-[**GitHub Repository**](https://github.com/nberlette/f1), and persisted to a
-[FoundationDB-backed **Deno KV** database][deno-kv].
-
-The first scrape happened on June 3rd, 2023. As of September 16th, it has
-amassed **over 13,000 photos** and counting, totalling just over **1.0GB**!
-
-### Who made this?
-
-This project is actively maintained by [**Nicholas Berlette**][nberlette], and
-was developed as an [open source project][readme] entirely in his personal time.
-The technology used includes [**TypeScript**][typescript], [**Deno**][deno],
-[**Deno KV**][deno-kv], and [GitHub Actions][github-actions].
-
-This is a personal project, with no commercial interests or any form of
-monetization, and was built purely out for educational and historical purposes.
-
-### [**Star it on GitHub! ⭐**][github-star]
-
-If you find this project intriguing, consider interacting with it on GitHub. By
-starring the repository, you can help it gain more visibility. If you have a
-suggestion or want to report a bug, feel free to open an issue or contribute to
-the project by making a pull request.
-
-Thanks for stopping by!
-
-— Nicholas Berlette
-
----
-
-![Formula 1 AI-generated fan art][artwork-1]
-
----
-
 ## How it Works
 
-The majority of the work happens in [`main.ts`](./main.ts), despite it only
+The majority of the work happens in [`main.ts`][main.ts], despite it only
 being 3 lines of code. It is responsible for invoking the scraper located in
 [`src/scrape.ts`][src-scrape.ts], and is ran every 10 minutes by a GitHub Action
-defined by the workflow in [`main.yml`](./.github/workflows/main.yml).
+defined by the workflow in [`main.yml`][workflow].
 
 [📖 **Click here for an in-depth explanation of the scrape process**](#scrape-process-step-by-step)
 
@@ -101,8 +76,7 @@ defined by the workflow in [`main.yml`](./.github/workflows/main.yml).
 
 Images are named after their capture time as a `JPEG` file in **UTC**. For
 example, an image captured at `2023-07-09T04:28:57` would be saved as
-[`./assets/2023-07-09/04_28_57.jpg`](./assets/2023-07-09/04_28_57.jpg). The
-latest image is always saved as [`./assets/latest.jpg`][latest-img] for easy
+[`./assets/2023-07-09/04_28_57.jpg`](https://github.com/nberlette/f1/blob/main/assets/2023-07-09/04_28_57.jpg?raw=true). The latest image is always saved as [`./assets/latest.jpg`][latest-img] for easy
 access.
 
 #### Cloud Persistence
@@ -205,6 +179,44 @@ data, this project will continue to auto-update.
 
 ---
 
+## About
+
+The photos are stored in the public
+[**GitHub Repository**](https://github.com/nberlette/f1), and persisted to a
+[FoundationDB-backed **Deno KV** database][deno-kv].
+
+The first scrape happened on June 3rd, 2023. As of September 16th, it has
+amassed **over 13,000 photos** and counting, totalling just over **1.0GB**!
+
+### Who made this?
+
+This project is actively maintained by [**Nicholas Berlette**][nberlette], and
+was developed as an [open source project][readme] entirely in his personal time.
+The technology used includes [**TypeScript**][typescript], [**Deno**][deno],
+[**Deno KV**][deno-kv], and [GitHub Actions][github-actions].
+
+This is a personal project, with no commercial interests or any form of
+monetization, and was built purely out for educational and historical purposes.
+
+### [**Star it on GitHub! ⭐**][github-star]
+
+If you find this project intriguing, consider interacting with it on GitHub. By
+starring the repository, you can help it gain more visibility. If you have a
+suggestion or want to report a bug, feel free to open an issue or contribute to
+the project by making a pull request.
+
+Thanks for stopping by!
+
+— Nicholas Berlette
+
+---
+
+![Formula 1 AI-generated fan art][artwork-1]
+
+---
+
+## Further Reading
+
 ### Camera Location
 
 The camera is at the "Harmon Paddock" zone of the track, located just southeast
@@ -238,9 +250,7 @@ The first angle will be made into a separate timelapse video, from June 3rd,
 2023 through August 15th, 2023. The second angle will be from August 15th, 2023
 through the completion of the track.
 
----
-
-## Future Plans
+### Future Plans
 
 A frontend display for viewing the images as a growing timelapse is under
 development. This will also help create a timelapse video once the track build
@@ -248,21 +258,18 @@ is complete. Check [`n.berlette.com/f1`](https://n.berlette.com/f1) for updates.
 
 ---
 
-![Formula 1 AI-generated fan art][artwork-4]
-
----
-
 <div align="center"><br>
 
-[**MIT**][MIT] © [**Nicholas Berlette**][nberlette]
+#### [**MIT**][MIT] © [**Nicholas Berlette**][nberlette]
 
-###### This project is not affiliated with [Formula 1][formula1] or the FIA.<br><small>It is for educational and historical documentation purposes only.</small>
+###### This project is not affiliated with [Formula 1][formula1] and is purely for educational purposes.
 
 </div>
 
 [MIT]: https://nick.mit-license.org "MIT License"
 [nberlette]: https://github.com/nberlette "Nicholas Berlette's GitHub profile"
 [github-star]: https://github.com/nberlette/f1/stargazers "Star this project on GitHub!"
+[github-actions]: https://github.com/features/actions "GitHub Actions Official Landing Page"
 [readme]: https://github.com/nberlette/f1#readme "View the README on GitHub"
 [workflow]: https://github.com/nberlette/f1/blob/main/.github/workflows/main.yml "GitHub Actions workflow file"
 [assets]: https://github.com/nberlette/f1/tree/main/assets "View the 'assets' folder on GitHub"
@@ -282,6 +289,7 @@ is complete. Check [`n.berlette.com/f1`](https://n.berlette.com/f1) for updates.
 [sdxl]: https://github.com/Stability-AI/stablediffusion "Stable Diffusion XL 1.0"
 [formula1-site]: https://www.f1lasvegasgp.com/track-layout "Formula 1's Las Vegas Grand Prix Track Layout"
 [formula1]: https://www.formula1.com/en/latest/article.las-vegas-to-host-formula-1-grand-prix-from-2022.3Z1Z3ZQZw8Zq8QZq8QZq8Q.html "Formula 1's announcement of the Las Vegas Grand Prix"
+[formula1-official-site]: https://www.formula1.com/en/racing/2023/Las_Vegas.html "Official Site for the Formula 1 Heineken Silver Las Vegas Grand Prix 2023"
 [oxblue]: https://oxblue.com "OxBlue Construction Cameras"
 [typescript]: https://typescriptlang.org "TypeScript's Official Website"
 [deno]: https://deno.land "Deno's Official Website - A secure runtime for JavaScript and TypeScript"
