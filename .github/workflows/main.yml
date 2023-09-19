@@ -26,16 +26,20 @@ jobs:
         run: |
           deno task scrape 2>&1
           exitcode=$?
-          echo "status=${exitcode:-0}" >> "$GITHUB_OUTPUT"
+          if [[ "$exitcode" == "0" ]]; then 
+            echo "success=true" >> $GITHUB_OUTPUT
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+          fi
 
-      - if: steps.scrape.outputs.status != "0" && steps.scrape.outputs.filename != ""
+      - if: steps.scrape.outputs.success == "true"
         name: "(run) upload artifacts"
         uses: actions/upload-artifact@v3
         with:
           path: ${{ steps.scrape.outputs.filename }}
           name: ${{ steps.scrape.outputs.hash }}
         
-      - if: steps.scrape.outputs.status != "0"
+      - if: steps.scrape.outputs.success == "true"
         name: "(git) commit + push"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
