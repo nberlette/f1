@@ -1,51 +1,69 @@
 name: Scrape
 on:
   schedule:
-    - cron: "*/8 * * * *"
+    - cron: "*/9 * * * *"
   workflow_dispatch:
 jobs:
   scrape:
     name: "Scrape latest photo"
     runs-on: ubuntu-latest
+    outputs:
+      path: steps.scrape.outputs.filename
+      size: steps.scrape.outputs.size
+      diff: steps.scrape.outputs.diff
+      time: steps.scrape.outputs.timestamp
+      hash: steps.scrape.outputs.hash
+      key: steps.scrape.outputs.key
     steps:
-      - name: "(setup) checkout"
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: "(setup) deno"
-        uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
-      - 
-        name: "(setup) git"
-        run: |
+      - run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-
       - id: scrape
         name: "(run) deno task scrape"
         env:
           DENO_KV_PATH: ${{ secrets.DENO_KV_PATH }}
           DENO_KV_ACCESS_TOKEN: ${{ secrets.DENO_KV_ACCESS_TOKEN }}
-        run: deno task scrape
-
-      - if: ${{ steps.scrape.outputs.filename == '' }}
-        name: "no new photo captured"
+        shell: bash
         run: |
-          echo -e $'\e[1;7;31mERROR\e[0m \e[1;3;91mNo new photo captured!\e[0m'
-          exit 1
-        
-      - if: ${{ success() }}
+          deno task scrape 2>&1
+          exitcode=$?
+          echo "status=${exitcode:-0}" >> "$GITHUB_OUTPUT"
+
+      - if: steps.scrape.outputs.status != "0" && jobs.scrape.outputs.path != ""
         name: "(run) upload artifacts"
         uses: actions/upload-artifact@v3
         with:
           path: ${{ steps.scrape.outputs.filename }}
+          name: ${{ jobs.scrape.outputs.hash }}
         
-      - name: "(git) commit + push"
+      - if: steps.scrape.outputs.status != "0"
+        name: "(git) commit + push"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TIME: ${{ jobs.scrape.outputs.time }}
+          SIZE: ${{ jobs.scrape.outputs.size }}
+          DIFF: ${{ jobs.scrape.outputs.diff }}
+          HASH: ${{ jobs.scrape.outputs.hash }}
+          PATH: ${{ jobs.scrape.outputs.path }}
+          KEY: ${{ jobs.scrape.outputs.key }}
+          
         run: |
-          git add .
-          git commit -m "[$(date +"%F %H:%M:%S %Z")]: new photo captured"
-          git push
+          # update latest.jpg in its own commit
+          git commit ./assets/latest.jpg -m "[skip ci] 🆙 update latest.jpg (${DIFF})"
+          # now add the newly scraped photo
+          git add ./assets
+          # construct a commit message with helpful details in it
+          message="[skip ci] 📸 new photo found at ${TIME}\\n\\n"
+          message+="Here are some details regarding the new image:\\n"
+          message+="- time: ${TIME} UTC\\n- key : ${KEY}\\n"
+          message+="- path: ${PATH}\\n- hash: ${HASH-}\\n"
+          message+="- size: ${SIZE}\\n- diff: ${DIFF:-"?"}\\n\\n"
+          message+="NOTE: This commit message was generated automatically."
+          # commit and push it obvs
+          git commit -m "${message}" && git push
