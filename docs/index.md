@@ -1,5 +1,3 @@
-<div align="center">
-
 # 🏎️ [`@nberlette/f1`](https://github.com/nberlette/f1#readme)
 
 ## Capturing live photos of the Las Vegas Formula 1 track build
@@ -22,7 +20,7 @@ The actual race (officially known as the **_"Formula 1 Heineken Silver Las Vegas
 </div><div>
 
 🗓️ [**View some of the previously captured snapshots**](#previous-snapshots)
-</div></div>
+</div>
 
 ---
 
@@ -258,13 +256,13 @@ is complete. Check [`n.berlette.com/f1`](https://n.berlette.com/f1) for updates.
 
 ---
 
-<div align="center"><br>
+<br>
 
 #### [**MIT**][MIT] © [**Nicholas Berlette**][nberlette]
 
 ###### This project is not affiliated with [Formula 1][formula1] and is purely for educational purposes.
 
-</div>
+<br>
 
 [MIT]: https://nick.mit-license.org "MIT License"
 [nberlette]: https://github.com/nberlette "Nicholas Berlette's GitHub profile"
