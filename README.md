@@ -30,7 +30,7 @@ The track is slated for completion in October 2023. The race is in November.
 <tbody>
 <tr>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-16/22_45_35.jpg?raw=true" title="2023-09-16T22:45:35" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-16/22_45_35.jpg?raw=true" alt="2023-09-16T22:45:35" style="border-radius:8px" /></a></td>
-<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-10/22_27_03.jpg?raw=true" title="2023-09-10T22:27:03" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-10/22_27_03.jpg?raw=true" alt="2023-09-10T22:27:03" style="border-radius:8px" /></a></td>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-10/22_33_07.jpg?raw=true" title="2023-09-10T22:33:07" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-10/22_33_07.jpg?raw=true" alt="2023-09-10T22:33:07" style="border-radius:8px" /></a></td>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-04/22_49_09.jpg?raw=true" title="2023-09-04T22:49:09" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-04/22_49_09.jpg?raw=true" alt="2023-09-04T22:49:09" style="border-radius:8px" /></a></td>
 </tr>
 </tbody>
@@ -43,7 +43,7 @@ The track is slated for completion in October 2023. The race is in November.
 <tr>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-08-28/22_45_21.jpg?raw=true" title="2023-08-28T22:45:21" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-08-28/22_45_21.jpg?raw=true" alt="2023-08-28T22:45:21" style="border-radius:8px" /></a></td>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-08-21/22_45_10.jpg?raw=true" title="2023-08-21T22:45:10" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-08-21/22_45_10.jpg?raw=true" alt="2023-08-21T22:45:10" style="border-radius:8px" /></a></td>
-<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-08-14/22_42_06.jpg?raw=true" title="2023-08-14T22:42:06" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-08-14/22_42_06.jpg?raw=true" alt="2023-08-14T22:42:06" style="border-radius:8px" /></a></td>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-08-14/19_53_29.jpg?raw=true" title="2023-08-14T19:53:29" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-08-14/19_53_29.jpg?raw=true" alt="2023-08-14T19:53:29" style="border-radius:8px" /></a></td>
 </tr>
 </tbody>
 </table>
