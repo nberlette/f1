@@ -39,7 +39,7 @@ jobs:
           SIZE: ${{ steps.scrape.outputs.size }}
           DIFF: ${{ steps.scrape.outputs.diff }}
           HASH: ${{ steps.scrape.outputs.hash }}
-          PATH: ${{ steps.scrape.outputs.filename }}
+          FILE: ${{ steps.scrape.outputs.filename }}
           KEY: ${{ steps.scrape.outputs.key }}
         run: |
           git add ./assets/latest.jpg 
@@ -49,7 +49,7 @@ jobs:
           message="[skip ci] new photo found at ${TIME}\\n\\n"
           message+="Here are some details regarding the new image:\\n"
           message+="- time: ${TIME} UTC\\n- key : ${KEY}\\n"
-          message+="- path: ${PATH}\\n- hash: ${HASH-}\\n"
+          message+="- path: ${FILE}\\n- hash: ${HASH-}\\n"
           message+="- size: ${SIZE}\\n- diff: ${DIFF:-"?"}\\n\\n"
           message+="NOTE: This commit message was generated automatically."
           git commit -m "${message}" && git push
