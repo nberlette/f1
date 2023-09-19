@@ -46,10 +46,10 @@ jobs:
           git commit -m "[skip ci] update latest.jpg"
           
           git add ./assets
-          message="[skip ci] new photo found at ${TIME}\\n\\n"
-          message+="Here are some details regarding the new image:\\n"
-          message+="- time: ${TIME} UTC\\n- key : ${KEY}\\n"
-          message+="- path: ${FILE}\\n- hash: ${HASH-}\\n"
-          message+="- size: ${SIZE}\\n- diff: ${DIFF:-"?"}\\n\\n"
+          message="[skip ci] new photo found at ${TIME}"$'\n\n'
+          message+="Here are some details regarding the new image:"$'\n'
+          message+="- time: ${TIME}"$'\n'"- key : ${KEY-}"$'\n'
+          message+="- path: ${FILE}"$'\n'"- hash: ${HASH-}"$'\n'
+          message+="- size: ${SIZE}"$'\n'"- diff: ${DIFF:-"?"}"$'\n\n'
           message+="NOTE: This commit message was generated automatically."
           git commit -m "${message}" && git push
