@@ -1,5 +1,3 @@
-# 🏎️ [`@nberlette/f1`](https://github.com/nberlette/f1#readme)
-
 ## Capturing live photos of the Las Vegas Formula 1 track build
 
 This project is a purpose-built image scraper developed in TypeScript and powered by Deno. Its sole purpose is to capture a live snapshot every every ~10 minutes of the new Formula 1 race track that is currently under construction in Las Vegas, NV. 
@@ -8,19 +6,18 @@ It is automated by GitHub Actions to run at regular intervals, and leverages Den
 
 The actual race (officially known as the **_"Formula 1 Heineken Silver Las Vegas Grand Prix 2023"_**) will be held on **November 18th, 2023**, with practice and qualifying the two days prior. For more information on the race itself, [**see the official site here**][formula1-official-site].
 
-<br><div>
+
   
 ℹ️ [**Interested in how it works? Click here for more info!**](#about)  
-</div><div>
+
 
 🌟 [**Think this project is cool? Please star it on GitHub!**][github-star]  
-</div><div>
+
 
 📸 [**View the latest snapshot of the construction site**](#latest-snapshot)
-</div><div>
+
 
 🗓️ [**View some of the previously captured snapshots**](#previous-snapshots)
-</div>
 
 ---
 
