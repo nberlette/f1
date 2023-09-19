@@ -42,16 +42,14 @@ jobs:
           PATH: ${{ steps.scrape.outputs.filename }}
           KEY: ${{ steps.scrape.outputs.key }}
         run: |
-          # update latest.jpg in its own commit
-          git commit ./assets/latest.jpg -m "[skip ci] 🆙 update latest.jpg (${DIFF})"
-          # now add the newly scraped photo
+          git add ./assets/latest.jpg 
+          git commit -m "[skip ci] update latest.jpg"
+          
           git add ./assets
-          # construct a commit message with helpful details in it
-          message="[skip ci] 📸 new photo found at ${TIME}\\n\\n"
+          message="[skip ci] new photo found at ${TIME}\\n\\n"
           message+="Here are some details regarding the new image:\\n"
           message+="- time: ${TIME} UTC\\n- key : ${KEY}\\n"
           message+="- path: ${PATH}\\n- hash: ${HASH-}\\n"
           message+="- size: ${SIZE}\\n- diff: ${DIFF:-"?"}\\n\\n"
           message+="NOTE: This commit message was generated automatically."
-          # commit and push it obvs
           git commit -m "${message}" && git push
