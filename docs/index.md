@@ -1,3 +1,7 @@
+![Formula 1 AI-generated fan art][artwork-4]
+
+---
+
 ## Capturing live photos of the Las Vegas Formula 1 track build
 
 This project is a purpose-built image scraper developed in TypeScript and powered by Deno. Its sole purpose is to capture a live snapshot every every ~10 minutes of the new Formula 1 race track that is currently under construction in Las Vegas, NV. 
@@ -18,12 +22,6 @@ The actual race (officially known as the **_"Formula 1 Heineken Silver Las Vegas
 
 
 🗓️ [**View some of the previously captured snapshots**](#previous-snapshots)
-
----
-
-![Formula 1 AI-generated fan art][artwork-4]
-
----
 
 ## Latest Snapshot
 
