@@ -5,4 +5,3 @@ node_modules
 Thumbs.db
 *.log
 .*.log
-.env*

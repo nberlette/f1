@@ -1,4 +1,5 @@
-#!/usr/bin/env -S deno run --unstable --allow-all
+#!/usr/bin/env -S deno run -A --unstable
+
 import { scrape } from "./src/scrape.ts";
 
 if (import.meta.main) await scrape();
