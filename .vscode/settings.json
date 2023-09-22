@@ -1,0 +1,19 @@
+{
+  "deno.enable": true,
+  "deno.unstable": true,
+  "deno.lint": true,
+  "deno.codeLens.test": true,
+  "deno.cacheOnSave": true,
+  "deno.documentPreloadLimit": 100,
+
+  "files.associations": {
+    "*.webidl": "webidl",
+    "*.idl": "webidl"
+  },
+  "editor.stickyTabStops": true,
+  "editor.smoothScrolling": true,
+  "editor.stablePeek": true,
+  "editor.linkedEditing": true,
+  "editor.foldingImportsByDefault": false,
+  "editor.columnSelection": false
+}

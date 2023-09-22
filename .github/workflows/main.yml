@@ -1,38 +1,55 @@
 name: Scrape
 on:
   schedule:
-    - cron: "*/7 * * * *"
+    - cron: "*/9 * * * *"
   workflow_dispatch:
 jobs:
   scrape:
     name: "Scrape latest photo"
     runs-on: ubuntu-latest
     steps:
-      - name: "(setup) checkout"
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: "(setup) deno"
-        uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
-
+      - run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
       - id: scrape
-        name: "(run) main.ts"
-        run: deno run --unstable --allow-all main.ts
+        name: "(run) deno task scrape"
+        env:
+          DENO_KV_PATH: ${{ secrets.DENO_KV_PATH }}
+          DENO_KV_ACCESS_TOKEN: ${{ secrets.DENO_KV_ACCESS_TOKEN }}
+        shell: bash
+        run: deno task scrape 2>&1
 
-      - name: "upload artifacts"
+      - name: "(run) upload artifacts"
         uses: actions/upload-artifact@v3
         with:
           path: ${{ steps.scrape.outputs.filename }}
-
-      - name: "commit + push"
+          name: ${{ steps.scrape.outputs.hash }}
+        
+      - if: ${{ success() }}
+        name: "(git) commit + push"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TIME: ${{ steps.scrape.outputs.timestamp }}
+          SIZE: ${{ steps.scrape.outputs.size }}
+          DIFF: ${{ steps.scrape.outputs.diff }}
+          HASH: ${{ steps.scrape.outputs.hash }}
+          FILE: ${{ steps.scrape.outputs.filename }}
+          KEY: ${{ steps.scrape.outputs.key }}
         run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add .
-          git commit -m "[$(date +"%F %H:%M:%S %Z")]: new photo captured"
-          git push
+          git add ./assets/latest.jpg 
+          git commit -m "[skip ci] update latest.jpg"
+          
+          git add ./assets
+          message="[skip ci] new photo found at ${TIME}"$'\n\n'
+          message+="Here are some details regarding the new image:"$'\n'
+          message+="- time: ${TIME}"$'\n'"- key : ${KEY-}"$'\n'
+          message+="- path: ${FILE}"$'\n'"- hash: ${HASH-}"$'\n'
+          message+="- size: ${SIZE}"$'\n'"- diff: ${DIFF:-"?"}"$'\n\n'
+          message+="NOTE: This commit message was generated automatically."
+          git commit -m "${message}" && git push
