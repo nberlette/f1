@@ -23,7 +23,12 @@ jobs:
           DENO_KV_PATH: ${{ secrets.DENO_KV_PATH }}
           DENO_KV_ACCESS_TOKEN: ${{ secrets.DENO_KV_ACCESS_TOKEN }}
         shell: bash
-        run: deno task scrape 2>&1
+        run: |
+          if ! deno task scrape 2>&1; then
+            echo $'\e[1;101m FAILED \e[0m The scrape was terminated after several failed attempts to fetch new content.\n'
+            echo $'Possibly caused by the source feed being down.\n'
+            exit 0 # prevent hard failure. just do nothing.
+          fi
 
       - name: "(run) upload artifacts"
         uses: actions/upload-artifact@v3
@@ -43,13 +48,14 @@ jobs:
           KEY: ${{ steps.scrape.outputs.key }}
         run: |
           git add ./assets/latest.jpg 
-          git commit -m "[skip ci] update latest.jpg"
+          git commit -m "chore: 📸 update latest.jpg"
           
           git add ./assets
-          message="[skip ci] new photo found at ${TIME}"$'\n\n'
-          message+="Here are some details regarding the new image:"$'\n'
-          message+="- time: ${TIME}"$'\n'"- key : ${KEY-}"$'\n'
-          message+="- path: ${FILE}"$'\n'"- hash: ${HASH-}"$'\n'
-          message+="- size: ${SIZE}"$'\n'"- diff: ${DIFF:-"?"}"$'\n\n'
-          message+="NOTE: This commit message was generated automatically."
+
+          message='[%s]: 📸 new photo captured\n\n'\
+          'Here are some stats and details of the new image:\n'\
+          '- time: %s\n- hash: %s\n- size: %s B (diff %s B)\n- key : %s\n- path: %s\n\n'\
+          'View the new image:\n\t%s\n\n'\
+          'NOTE: This commit message was generated automatically.'
+          message="$(printf "$message" "$TIME" "$TIME" "$KEY" "$FILE" "$HASH" "$SIZE" "$DIFF" "$VIEW")"
           git commit -m "${message}" && git push
