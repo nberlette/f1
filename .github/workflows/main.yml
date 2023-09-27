@@ -47,15 +47,27 @@ jobs:
           FILE: ${{ steps.scrape.outputs.filename }}
           KEY: ${{ steps.scrape.outputs.key }}
         run: |
-          git add ./assets/latest.jpg 
-          git commit -m "chore: 📸 update latest.jpg"
-          
-          git add ./assets
-
-          message='[%s]: 📸 new photo captured\n\n'\
-          'Here are some stats and details of the new image:\n'\
-          '- time: %s\n- hash: %s\n- size: %s B (diff %s B)\n- key : %s\n- path: %s\n\n'\
-          'View the new image:\n\t%s\n\n'\
-          'NOTE: This commit message was generated automatically.'
-          message="$(printf "$message" "$TIME" "$TIME" "$KEY" "$FILE" "$HASH" "$SIZE" "$DIFF" "$VIEW")"
-          git commit -m "${message}" && git push
+          message=""
+          message+='[%s]: 📸 new photo captured\n\nTasks completed by this commit:\n\n'
+          message+='- [x] updated latest image with the new data\n- [x] saved in the assets folder under %s\n'
+          message+='- [x] saved blob in Deno KV under the key below\n- [x] hash indexed in Deno KV for de-duping\n\n'
+          message+='📎 View: %s\n\n| Description   | %-64s |\n| ------------- | %-64s |\n| Time (in UTC) | %-64s |\n'
+          message+='| Hash (SHA256) | %-64s |\n| Size (KBytes) | %-64.2f |\n| Diff (KBytes) | %+-64.2f |\n'
+          message+='| Path (local)  | %-64s |\n| Key (Deno KV) | %-64s |\n\n'
+          message+='> **Note**: "hash" above is the image data sha256sum.\n\n'
+          message+='> **Warning**: this commit message is auto-generated and may contain errors.\n'
+          message="$(
+            printf "$message" \
+               "$TIME" \
+               "$(date +%Y-%m-%d --date="$TIME")" \
+               "https://github.com/nberlette/f1/raw/main/${FILE#./}" \
+               "Value" \
+               "$(printf '%-64s' "-" | tr ' ' '-')" \
+               "$TIME" \
+               "$HASH" \
+               "$((SIZE / 1024))" \
+               "$((DIFF / 1024))"  \
+               "$FILE" \
+               "$KEY" \
+          )"
+          git commit -a -m "${message}" && git push
