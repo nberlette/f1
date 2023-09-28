@@ -70,4 +70,4 @@ jobs:
                "$FILE" \
                "$KEY" \
           )"
-          git commit -a -m "${message}" && git push
+          git commit ./assets -m "${message}" && git push
