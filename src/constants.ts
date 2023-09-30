@@ -27,9 +27,9 @@ export const BLOB_KEY = "__BLOB__";
  * the scrape was likely triggered before the image was updated. In this case,
  * after {@linkcode ATTEMPTS} attempts it will give up and throw an error.
  */
-export const DELAY = 90_000;
+export const DELAY = 30_000;
 
-export const ATTEMPTS = 4;
+export const ATTEMPTS = 5;
 
 // #endregion Scrape Config
 
