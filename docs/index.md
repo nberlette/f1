@@ -2,37 +2,44 @@
 
 ---
 
-## Capturing live photos of the Las Vegas Formula 1 track build
+## Capturing photos of the Las Vegas Formula 1 track build
 
-This project is a purpose-built image scraper developed in TypeScript and powered by Deno. Its sole purpose is to capture a live snapshot every every ~10 minutes of the new Formula 1 race track that is currently under construction in Las Vegas, NV. 
+This project is a purpose-built image scraper developed in TypeScript and powered by Deno. Its sole purpose is to capture a live snapshot every every ~10 minutes of the new Formula 1 race track that is currently under construction in Las Vegas, NV.
 
 It is automated by GitHub Actions to run at regular intervals, and leverages Deno KV for data persistance. For accessibility and additional redudancy (since Deno KV is still in beta), a hard copy of each scraped image is also pushed to the repository. Once the track is completed (or whenever the live stream goes offline), **all** of the photos it has collected will be then be compiled into a timelapse video using ffmpeg. That will conclude this project and it will then be archived.
 
 The actual race (officially known as the **_"Formula 1 Heineken Silver Las Vegas Grand Prix 2023"_**) will be held on **November 18th, 2023**, with practice and qualifying the two days prior. For more information on the race itself, [**see the official site here**][formula1-official-site].
 
+ℹ️ [**Interested in how it works? Click here for more info!**](#about)
 
-  
-ℹ️ [**Interested in how it works? Click here for more info!**](#about)  
-
-
-🌟 [**Think this project is cool? Please star it on GitHub!**][github-star]  
-
+🌟 [**Think this project is cool? Please star it on GitHub!**][github-star]
 
 📸 [**View the latest snapshot of the construction site**](#latest-snapshot)
-
 
 🗓️ [**View some of the previously captured snapshots**](#previous-snapshots)
 
 ## Latest Snapshot
 
-[![The latest image scraped from the Formula 1 track build in Las Vegas][latest-img]][latest-img]
+<a href="https://github.com/nberlette/f1/blob/main/assets/latest.jpg?raw=true" title="The latest image scraped from the Formula 1 track build in Las Vegas"><img src="https://github.com/nberlette/f1/blob/main/assets/latest.jpg?raw=true" alt="The latest image scraped from the Formula 1 track build in Las Vegas" style="border-radius:8px" /></a>
 
 ### Previous Snapshots
 
 <table>
 <thead>
+  <th>September 24th</th>
+  <th>September 20th</th>
   <th>September 16th</th>
-  <th>September 10th</th>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-24/22_12_21.jpg?raw=true" title="2023-09-24T22:12:21" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-24/22_12_21.jpg?raw=true" alt="2023-09-24T22:12:21" style="border-radius:8px" /></a></td>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-20/22_22_10.jpg?raw=true" title="2023-09-20T22:22:10" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-20/22_22_10.jpg?raw=true" alt="2023-09-20T22:22:10" style="border-radius:8px" /></a></td>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-16/22_20_41.jpg?raw=true" title="2023-09-04T22:20:41" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-16/22_20_41.jpg?raw=true" alt="2023-09-04T22:20:41" style="border-radius:8px" /></a></td>
+</tr>
+</tbody>
+<thead>
+  <th>September 12th</th>
+  <th>September 8th</th>
   <th>September 4th</th>
 </thead>
 <tbody>
@@ -40,18 +47,6 @@ The actual race (officially known as the **_"Formula 1 Heineken Silver Las Vegas
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-16/22_45_35.jpg?raw=true" title="2023-09-16T22:45:35" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-16/22_45_35.jpg?raw=true" alt="2023-09-16T22:45:35" style="border-radius:8px" /></a></td>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-10/22_33_07.jpg?raw=true" title="2023-09-10T22:33:07" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-10/22_33_07.jpg?raw=true" alt="2023-09-10T22:33:07" style="border-radius:8px" /></a></td>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-04/22_49_09.jpg?raw=true" title="2023-09-04T22:49:09" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-04/22_49_09.jpg?raw=true" alt="2023-09-04T22:49:09" style="border-radius:8px" /></a></td>
-</tr>
-</tbody>
-<thead>
-  <th>August 28th</th>
-  <th>August 21st</th>
-  <th>August 14th</th>
-</thead>
-<tbody>
-<tr>
-<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-08-28/22_45_21.jpg?raw=true" title="2023-08-28T22:45:21" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-08-28/22_45_21.jpg?raw=true" alt="2023-08-28T22:45:21" style="border-radius:8px" /></a></td>
-<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-08-21/22_45_10.jpg?raw=true" title="2023-08-21T22:45:10" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-08-21/22_45_10.jpg?raw=true" alt="2023-08-21T22:45:10" style="border-radius:8px" /></a></td>
-<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-08-14/19_53_29.jpg?raw=true" title="2023-08-14T19:53:29" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-08-14/19_53_29.jpg?raw=true" alt="2023-08-14T19:53:29" style="border-radius:8px" /></a></td>
 </tr>
 </tbody>
 </table>
@@ -84,15 +79,20 @@ allowing remote access without having to clone all the images.
 
 ### Tools Used
 
-- [x] [`Deno v1.36.4`](https://deno.land/manual@v1.34.1) <small> _(for
-      execution)_</small>
-- [x] [`Deno KV`](https://docs.deno.com/kv/manual) <small> _(for data
-      persistence)_</small>
-- [x] [`GitHub Actions`](https://github.com/actions) <small> _(for
-      automation)_</small>
-- [x] [`TypeScript 5.1.6`](https://typescriptlang.org) <small> _(for type
-      safety)_</small>
-- [x] [`ffmpeg`](https://ffmpeg.org) <small> _(for timelapse creation)_</small>
+- [x] [`Deno v1.37.1`](https://deno.land/manual@v1.34.1)
+- <small>Fast Rust-based runtime; best-in-class security and TypeScript support</small>
+- <small>Provides a built-in HTTP client, file system tools, and a key-value store</small>
+- [x] [`TypeScript 5.2.2`](https://typescriptlang.org)
+- <small>Superset of JavaScript with advanced static type checking capabilities</small>
+- <small>Provides type safety, for easier maintainability and better code overall.</small>
+- [x] [`GitHub Actions`](https://github.com/actions)
+- <small>Provides **free** macOS virtual machines (runners), on which the scraper runs</small>
+- <small>Responsible for the scheduled execution of the scraper workflow</small>
+- <small>Also provides a temporary storage space for image artifacts</small>
+- [x] [`Deno KV`](https://docs.deno.com/kv/manual) <small>_(currently in beta)_</small>
+- <small>Provides global data persistence, state management, and caching</small>
+- [x] [`ffmpeg`](https://ffmpeg.org) <small>_(feature under development, coming soon)_</small>
+- <small>Leveraged by GitHub Actions to compile timelapse videos from images</small>
 
 ### Image Source
 
@@ -174,12 +174,14 @@ data, this project will continue to auto-update.
 
 ## About
 
-The photos are stored in the public
-[**GitHub Repository**](https://github.com/nberlette/f1), and persisted to a
-[FoundationDB-backed **Deno KV** database][deno-kv].
-
 The first scrape happened on June 3rd, 2023. As of September 16th, it has
 amassed **over 13,000 photos** and counting, totalling just over **1.0GB**!
+
+### Where are the photos?
+
+The photos are stored in the public [**GitHub Repository**][readme], thanks to
+GitHub's wonderful free storage for open source projects. They're also persisted
+to a [FoundationDB]-backed [**Deno KV** database][deno-kv].
 
 ### Who made this?
 
@@ -188,7 +190,7 @@ was developed as an [open source project][readme] entirely in his personal time.
 The technology used includes [**TypeScript**][typescript], [**Deno**][deno],
 [**Deno KV**][deno-kv], and [GitHub Actions][github-actions].
 
-This is a personal project, with no commercial interests or any form of
+> ⚠️ This is a personal project, with no commercial interests or any form of
 monetization, and was built purely out for educational and historical purposes.
 
 ### [**Star it on GitHub! ⭐**][github-star]
@@ -251,11 +253,9 @@ is complete. Check [`n.berlette.com/f1`](https://n.berlette.com/f1) for updates.
 
 ---
 
-<br>
+##### [MIT] © [**Nicholas Berlette**][nberlette]. Open Source Software, made with ♥️ in Las Vegas, NV.
 
-#### [**MIT**][MIT] © [**Nicholas Berlette**][nberlette]
-
-###### This project is not affiliated with [Formula 1][formula1] and is purely for educational purposes.
+> This project is not affiliated with [Formula 1][formula1]. For educational purposes only.
 
 <br>
 
@@ -287,3 +287,4 @@ is complete. Check [`n.berlette.com/f1`](https://n.berlette.com/f1) for updates.
 [typescript]: https://typescriptlang.org "TypeScript's Official Website"
 [deno]: https://deno.land "Deno's Official Website - A secure runtime for JavaScript and TypeScript"
 [deno-kv]: https://deno.land/manual@v1.36.0/runtime/kv "Deno KV - key-value store built directly into the Deno runtime."
+[FoundationDB]: https://www.foundationdb.org "FoundationDB's Official Website"
