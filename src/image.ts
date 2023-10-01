@@ -150,40 +150,48 @@ export class Image {
 
   /** Synchronizes the image data with the KV store. */
   protected async sync(): Promise<SyncedImage> {
-    if (this.buffer === null) {
-      debug("Image.sync", "Reading image from KV store.");
-      const blob = await this.#blobs.get(this.key);
-      const date = await this.#kv.get<Date>([
-        ...Image.hashTableKey,
-        this.hash,
-      ]);
-
-      if (date.value) {
-        debug("Image.sync", "Setting image date.");
-        this.#date.setTime(date.value.getTime());
-      } else {
-        debug("Image.sync", "Setting KV store cache to current image date.");
-        await this.#kv.set([...Image.hashTableKey, this.hash], this.date);
+    let blob: Uint8Array | null = await this.#blobs.get(this.key);
+    if ((await this.fileExists()) && blob === null) {
+      blob = await this.readFile();
+      const stat = await Deno.stat(this.path);
+      const instanceDate = this.date;
+      const fileStatDate = stat.birthtime ?? instanceDate;
+      // if theres a > 30second discrepancy between the file-system time and
+      // the time in this Image instance, we need to update things.
+      if (Math.abs(instanceDate.getTime() - fileStatDate.getTime()) > 30_000) {
+        this.#date = Image.pathToDate(this.path);
+        this.#data = blob.buffer;
+        const hash = Image.hash(blob, "hex");
+        await Image.setDateForHash(hash, this.date);
       }
-
-      if (blob) {
-        debug("Image.sync", "Setting image data from KV store cache.");
-        this.#data = blob.buffer.slice(
-          blob.byteOffset,
-          blob.byteOffset + blob.byteLength,
-        );
-      } else {
-        throw new ReferenceError(`Blob not found: ${inspect(this.key)}`);
+      await this.#blobs.set(this.key, blob);
+      if (!(await Image.getDateForHash(this.hash))) {
+        await Image.setDateForHash(this.hash, this.date);
       }
-    } else {
-      if (!(await this.exists())) {
-        debug("Image.sync", "Writing image to KV store.");
-        await this.write();
-      }
+      return this as SyncedImage;
     }
 
-    // deno-lint-ignore no-explicit-any
-    return this as any;
+    if (blob) {
+      const hash = Image.hash(blob, "hex");
+      const date = await Image.getDateForHash(hash);
+
+      if (date) {
+        if (date.getTime() !== this.date.getTime()) {
+          debug("Image.sync", "Updating image date to:", date.toJSON());
+          this.date.setTime(date.getTime());
+        }
+      } else {
+        debug("Image.sync", "Setting KV store cache to current image date.");
+        await Image.setDateForHash(hash, this.date);
+      }
+
+      debug("Image.sync", "Setting image data from KV store cache.");
+      this.#data = blob.buffer;
+    } else {
+      throw new ReferenceError(`Blob not found: ${inspect(this.key)}`);
+    }
+
+    return this as SyncedImage;
   }
 
   /** Reads the image's data from the KV store. */
@@ -428,10 +436,54 @@ export class Image {
     return await Image.fromReader(reader, latest);
   }
 
-  static hash(data: BufferSource | Image, digest?: "hex" | undefined): string;
-  static hash(data: BufferSource | Image, digest: "array"): number[];
-  static hash(data: BufferSource | Image, digest: "buffer"): ArrayBuffer;
-  static hash(data: BufferSource | Image, digest?: string) {
+  private static async getDateForHash(
+    hash: string | number[] | ArrayBuffer,
+  ): Promise<Date | null> {
+    return (await kv.get<Date>(Image.formatHashTableKey(hash))).value;
+  }
+
+  private static async setDateForHash(
+    hash: string | number[] | ArrayBuffer,
+    date: Date,
+  ): Promise<
+    {
+      readonly key: Deno.KvKey;
+      readonly ok: false;
+      readonly versionstamp: null;
+    } | {
+      readonly key: Deno.KvKey;
+      readonly ok: true;
+      readonly versionstamp: string;
+    }
+  > {
+    const key = Image.formatHashTableKey(hash);
+    const res = await kv.atomic().check({ key, versionstamp: null }).set(
+      key,
+      date,
+    ).commit();
+
+    const { ok = false, versionstamp = null } = { versionstamp: null, ...res };
+
+    if (ok && versionstamp) return { key, ok, versionstamp } as const;
+    return { key, ok: false, versionstamp: null } as const;
+  }
+
+  private static formatHashTableKey(hash: string | number[] | ArrayBuffer) {
+    if (isArrayBuffer(hash)) hash = [...new Uint8Array(hash)];
+    if (Array.isArray(hash)) hash = hash.map((b) => b.toString(16)).join("");
+    return [...Image.hashTablePrefix, hash];
+  }
+
+  private static hash(
+    data: BufferSource | Image,
+    digest?: "hex" | undefined,
+  ): string;
+  private static hash(data: BufferSource | Image, digest: "array"): number[];
+  private static hash(
+    data: BufferSource | Image,
+    digest: "buffer",
+  ): ArrayBuffer;
+  private static hash(data: BufferSource | Image, digest?: string) {
     const sha = new Sha256(/* is224 */ false, /* isSharedMemory */ false);
     const buffer = data instanceof Image || ArrayBuffer.isView(data)
       ? data.buffer?.slice(0)
