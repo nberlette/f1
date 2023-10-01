@@ -279,16 +279,13 @@ export class Image {
   equals(that: Image | BufferSource): boolean {
     if (this.data === null) return false;
     if (that instanceof Image) {
-      debug("Image.equals", "Comparing image data to another image's data.");
       return timingSafeEqual(this.data, that.data!);
     } else if (ArrayBuffer.isView(that)) {
-      debug("Image.equals", "Comparing image data to an ArrayBuffer.");
       return timingSafeEqual(
         this.data,
         new Uint8Array(that.buffer, that.byteOffset, that.byteLength),
       );
     } else if (isArrayBuffer(that)) {
-      debug("Image.equals", "Comparing image data to an ArrayBuffer.");
       return timingSafeEqual(
         this.data,
         new Uint8Array(that, 0, that.byteLength),
@@ -326,27 +323,30 @@ export class Image {
     return `${this.constructor.name} ${inspect(this.toJSON(), options)}`;
   }
 
+  static dateToParts(date: string | number | Date, latest?: boolean): string[] {
+    date = new Date(date);
+    if (latest) return [Image.folderName, Image.latestImageName];
+
+    let [pathname, filename] = date.toISOString().split(/(?<=\d+)T(?=\d+)/, 2);
+    // sanitize date string for pathname
+    pathname = pathname.replace(/[^0-9\-]+/g, "");
+    // format timestamp for filename
+    filename = `${
+      filename.replace(/(?<=:\d{2})\..+?$/, "").replace(/:/g, "_")
+    }.jpg`;
+
+    return [Image.folderName, pathname, filename];
+  }
+
   /** Converts an image's date to a path string. */
   static dateToPath(date: string | number | Date, latest?: boolean): string {
-    let dir = this.folderName, name = "";
-
-    try {
-      date = new Date(date);
-      const tz = date.getTimezoneOffset();
-      date.setTime(date.getTime() - tz * 60 * 1000);
-      [dir, name] = date.toISOString().split("T");
-      name = name.replace(/:/g, "_").replace(/\..+$/, "");
-    } catch {
-      if (!latest) throw new TypeError(`Invalid date: ${date}`);
-    }
-    return `${Image.folderName}/${
-      latest ? Image.latestImageName : `${dir}/${name}.jpg`
-    }`;
+    return $path.join(...Image.dateToParts(date, latest));
   }
 
   /** Converts an image's path to a date object. */
   static pathToDate(path: string | URL, latest?: boolean): Date {
-    const [dir, name] = path.toString().split(slashRegExp).slice(-2);
+    const dir = $path.basename($path.dirname(path.toString()), ".jpg")
+    const name = $path.basename(path.toString());
 
     if (!dir || !name) {
       throw new Error(
@@ -354,13 +354,10 @@ export class Image {
       );
     }
 
-    const time = name.replace(/\.jpe?g$/, "").replace(/_/g, ":");
-    const date = time === Image.latestImageName.split(".")[0] || latest
+    const time = name.replace(/_/g, ":");
+    const date = time === Image.latestImageName || latest === true
       ? new Date()
-      : new Date(`${dir}T${time}`);
-
-    const tz = date.getTimezoneOffset();
-    date.setTime(date.getTime() + tz * 60 * 1000);
+      : new Date(`${dir}T${time.replace(/\.jpe?g$/, "")}Z`);
 
     return date;
   }
@@ -372,13 +369,13 @@ export class Image {
     latest?: boolean,
   ): Promise<Image> {
     const hash = Image.hash(data, "hex");
-    const cached = await kv.get<Date>([...Image.hashTableKey, hash]);
-    if (cached.value && cached.versionstamp && !latest) {
-      return new Image(cached.value, data, parent, latest);
-    } else {
-      if (!latest) await kv.set([...Image.hashTableKey, hash], date);
-      return new Image(date, data, parent, latest);
+    const cached = await Image.getDateForHash(hash);
+    if (cached && !latest) {
+      return new Image(cached, data, parent, latest);
+    } else if (!latest) {
+      await kv.set([...Image.hashTablePrefix, hash], date);
     }
+    return new Image(date, data, parent, latest);
   }
 
   /**
@@ -391,7 +388,7 @@ export class Image {
     latest?: boolean,
   ): Promise<Image> {
     const path = Image.dateToPath(date, latest);
-    if (exists(path)) return await Image.fromFile(path, latest);
+    if ((await fs.exists(path))) return await Image.fromFile(path, latest);
     return new Image(Image.pathToDate(path), null, null, latest);
   }
 
@@ -399,13 +396,10 @@ export class Image {
   static async fromFile(path: string | URL, latest?: boolean): Promise<Image> {
     const date = Image.pathToDate(path, latest);
     const parent = path.toString().split(slashRegExp).slice(0, -2).join("/");
-    if (!exists(path)) throw new ReferenceError(`File not found: ${path}`);
-
-    debug("Image.fromFile", "Reading image from file-system.");
-    const data = await Deno.readFile(path);
+    if (!(await fs.exists(path))) throw new ReferenceError(`File not found: ${path}`);
 
     debug("Image.fromFile", "Creating image from file-system data.");
-    const img = await Image.fromData(data, date, parent, latest);
+    const img = await Image.fromData(await Deno.readFile(path), date, parent, latest);
 
     img.latest = latest ?? path.toString().endsWith(Image.latestImageName);
     return img;
