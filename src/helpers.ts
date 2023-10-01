@@ -4,6 +4,7 @@ export * from "./helpers/encode.ts";
 export * from "./helpers/equals.ts";
 export * as fmt from "./helpers/format.ts";
 export * from "./helpers/fs.ts";
+export * as fs from "./helpers/fs.ts";
 export * from "./helpers/path.ts";
 export * from "./helpers/sleep.ts";
 export * from "./helpers/types.ts";
