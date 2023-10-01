@@ -42,13 +42,13 @@ const slashRegExp = /(?<!^|\.{1,2})\/(?!$)/;
  */
 export class Image {
   /** The name of the folder where the images are stored. */
-  static folderName = "assets";
+  static readonly folderName = "assets";
 
   /** The Deno KV key prefix for the image hash-to-date index. */
-  static hashTableKey = ["hash_to_date"];
+  static readonly hashTablePrefix = ["hash_to_date"];
 
   /** The name of the file that contains the most recent image. */
-  static latestImageName = "latest.jpg";
+  static readonly latestImageName = "latest.jpg";
 
   #kv: Deno.Kv = kv;
   #path: string | URL = Image.folderName;
@@ -66,28 +66,26 @@ export class Image {
     if (isArrayBuffer(data)) {
       this.#data = data;
     } else if (ArrayBuffer.isView(data)) {
-      const { buffer, byteOffset, byteLength } = data;
-      this.#data = buffer.slice(byteOffset, byteOffset + byteLength);
+      const { buffer } = data;
+      this.#data = buffer
     }
 
-    if (kv) this.#blobs = new Blobs(this.#kv = kv);
-    if (date) this.#date = new Date(date);
+    this.#blobs = new Blobs(this.#kv = kv);
+    this.#date = date ? new Date(date) : new Date();
+
     path ??= Image.folderName;
-    path = `./${
-      path.toString().replace(/^file:\/\//, "").replace(Deno.cwd(), "").replace(
-        /\/$/,
+    path = "./" +
+      path.toString().replace(/^file:\/\/|^\.\/|\/$/g, "").replace(
+        Deno.cwd(),
         "",
-      ).replace(/^\.\//, "")
-    }`;
+      );
     this.#path = path;
     this.#latest = Boolean(latest);
-    debug("Image.constructor", "Creating new image instance.");
-    (async () => await this.sync())();
   }
 
   /**
-   * The underlying `ArrayBuffer` that contains this image's data. If the
-   * image hasn't been loaded yet, this value will be `null`.
+   * The underlying `ArrayBuffer` that contains this image's data. If the image
+   * hasn't been loaded yet, this value will be `null`.
    */
   get buffer(): ArrayBuffer | null {
     return this.#data;
