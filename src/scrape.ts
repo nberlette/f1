@@ -1,6 +1,6 @@
 import { inspect } from "../deps.ts";
 import {
-  ATTEMPTS,
+  ATTEMPTS as max,
   BASEDIR,
   DELAY,
   FILENAME,
@@ -9,15 +9,21 @@ import {
   PATHNAME,
   TEXT,
 } from "./constants.ts";
-import { debug, fmt, mkdir, setOutput, sleep } from "./helpers.ts";
+import { debug, fmt, fs, setOutput, sleep } from "./helpers.ts";
 import { Image } from "./image.ts";
 
-const TRY = {
+const retries = {
   read: 0,
   write: 0,
-  max: ATTEMPTS,
-  get failed() {
+  max,
+  get failed(): boolean {
     return this.read >= this.max || this.write >= this.max;
+  },
+  get remainingReads(): number {
+    return Math.max(this.max - this.read, 0);
+  },
+  get remainingWrites(): number {
+    return Math.max(this.max - this.write, 0);
   },
 };
 
@@ -33,18 +39,34 @@ export async function scrape() {
   debug("SCRAPE");
   debug({ now, dir, file, path, latestPath, latest });
 
-  mkdir(dir);
+  await fs.ensureDir(dir);
+
+  debug("scrape.read(" + IMAGE_URL + ")");
+  const image = await read(IMAGE_URL);
+
+  debug("scrape.write(", image, ")");
+  await write(image);
 
   /** Fetches the latest image data as a Uint8Array. */
-  async function read(url: string): Promise<Image> {
+  async function read(
+    url: string,
+    buster: string | number = Date.now(),
+  ): Promise<Image> {
     try {
-      const res = await fetch(`${url}?ts=${Date.now()}`);
+      const res = await fetch(`${url}?cache=${buster}`, {
+        cache: "no-store",
+        keepalive: false,
+        redirect: "follow",
+        headers: {
+          "Cache-Control": "no-cache, no-store, max-age=0, s-maxage=0"
+        }
+      });
       const image = await Image.fromStream(res.body!);
       debug("scrape.read(): incoming image");
       debug(image);
       return image;
     } catch {
-      if (TRY.read++ >= TRY.max) {
+      if (retries.read++ > retries.max) {
         throw new Error(
           fmt.string(TEXT.error, {
             message: "Scrape failed. Unable to fetch image.",
@@ -53,16 +75,19 @@ export async function scrape() {
         );
       }
       debug("scrape.read(): retrying...");
-      debug(TRY);
-      const attempts = TRY.max - TRY.read;
-      // const factor = Math.max(16, 1 << TRY.read);
+      debug(retries);
+
+      const attempts = retries.remainingReads;
+
       console.log(
+        new Date().toJSON(),
         fmt.string(TEXT.retry, {
           label: "FETCH ERROR",
           time: 1,
           attempts,
         }),
       );
+
       return await sleep(1000, read, url);
     }
   }
@@ -73,7 +98,7 @@ export async function scrape() {
 
     if (img.equals(latest)) {
       debug("scrape.write(): image unchanged...");
-      if (TRY.write++ >= TRY.max) {
+      if (++retries.write >= retries.max) {
         throw new Error(
           fmt.string(TEXT.error, {
             message: "Scrape failed. Image unchanged.",
@@ -86,7 +111,7 @@ export async function scrape() {
       await Deno.utime(latestPath, now, now);
 
       const time = Math.floor(DELAY / 1e3);
-      const attempts = TRY.max - TRY.write;
+      const attempts = retries.remainingWrites;
       console.log(
         fmt.string(TEXT.retry, { label: "UNCHANGED", time, attempts }),
       );
@@ -106,10 +131,10 @@ export async function scrape() {
     );
 
     debug("scrape.write(): write file");
-    await img.writeFile(path); // FS
+    await img.writeFile(); // FS
     console.log(
       fmt.string(TEXT.wrote, {
-        path,
+        path: img.path,
         size: fmt.bytes(size),
         color: 92,
       }),
@@ -117,7 +142,7 @@ export async function scrape() {
 
     debug("scrape.write(): write latest");
     await img.writeFile(latestPath); // FS
-    const diff = size - latest.byteLength;
+    const diff = size - latest.size;
 
     console.log(fmt.string(TEXT.updated, {
       path: latestPath,
@@ -127,17 +152,11 @@ export async function scrape() {
     }));
 
     debug("scrape.write(): set output");
-    setOutput("filename", path);
     setOutput("size", size + "");
     setOutput("diff", diff + "");
-    setOutput("timestamp", img.date.toJSON());
+    setOutput("time", JSON.stringify(img.date));
     setOutput("hash", img.hash);
+    setOutput("path", img.path);
     setOutput("key", JSON.stringify(img.key));
   }
-
-  debug("scrape.read(" + IMAGE_URL + ")");
-  const image = await read(IMAGE_URL);
-
-  debug("scrape.write(", image, ")");
-  await write(image);
 }
