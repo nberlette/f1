@@ -8,8 +8,9 @@ import {
   Sha256,
   writeAll,
 } from "../deps.ts";
+import * as $path from "node:path";
 import { Blobs, kv } from "./db.ts";
-import { debug, exists, isArrayBuffer, timingSafeEqual } from "./helpers.ts";
+import { debug, fs, isArrayBuffer, timingSafeEqual } from "./helpers.ts";
 
 type TimeStampString =
   | `${number}-${number}-${number}T${number}:${number}:${number}${string}`
@@ -121,8 +122,8 @@ export class Image {
   }
 
   /** The key used for persisting the image's data a in Deno KV database. */
-  get key(): Deno.KvKey {
-    return Image.dateToPath(this.date, this.latest).split(slashRegExp);
+  get key() {
+    return Image.dateToParts(this.date);
   }
 
   /**
@@ -131,7 +132,7 @@ export class Image {
    * ⚠️ **Note**: this file isn't guaranteed to exist, and may also be relative.
    */
   get path(): string {
-    return `./${Image.dateToPath(this.date, this.latest).replace(/^\.\//, "")}`;
+    return $path.join(...Image.dateToParts(this.date, this.latest));
   }
 
   /**
@@ -189,32 +190,25 @@ export class Image {
 
   /** Reads the image's data from the KV store. */
   async read(): Promise<Uint8Array> {
-    if (this.data) {
-      debug(
-        "Image.read",
-        "Returning image data without reading from KV store.",
-      );
-      return this.data;
-    }
+    if (this.data) return this.data;
     debug("Image.read", "Reading image from KV store.");
-    await this.sync();
-    debug("Image.read", "Returning image data after reading from KV store.");
-    return this.data!;
+    return (await this.sync()).data;
   }
 
   /** Writes the image's data to the KV store. */
   async write(): Promise<this> {
     debug("Image.write", "Writing image to KV store.");
     await this.#blobs.set(this.key, await this.read());
-    debug("Image.write", "Writing image date to KV store.");
-    await this.#kv.set([...Image.hashTableKey, this.hash], this.date);
+    if (!(await Image.getDateForHash(this.hash))) {
+      await Image.setDateForHash(this.hash, this.date);
+    }
     return this;
   }
 
   /** Checks whether or not the image's data exists in the KV store. */
   async exists(): Promise<boolean> {
     try {
-      return (await this.#blobs.get(this.key)) != null;
+      return (await this.#blobs.get(this.key)) !== null;
     } catch {
       return false;
     }
@@ -252,6 +246,7 @@ export class Image {
     options?: { create?: boolean; append?: boolean; truncate?: boolean },
   ): Promise<this> {
     path ??= this.path;
+    await fs.ensureFile(path);
     const write = true;
     const { create = true, truncate = true, append = false } = options ?? {};
 
@@ -265,9 +260,9 @@ export class Image {
   }
 
   /** Check if an image exists in a file-system, at an optional custom path. */
-  fileExists(path?: string | URL): boolean {
+  async fileExists(path?: string | URL): Promise<boolean> {
     path ??= this.path;
-    return exists(path);
+    return await fs.exists(path);
   }
 
   /** Delete the image from the file-system, optionally at a custom path. */
