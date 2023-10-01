@@ -6,46 +6,51 @@ on:
 jobs:
   scrape:
     name: "Scrape latest photo"
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
+    outputs:
+      time: ${{ steps.scrape.outputs.time }}
+      size: ${{ steps.scrape.outputs.size }}
+      diff: ${{ steps.scrape.outputs.diff }}
+      hash: ${{ steps.scrape.outputs.hash }}
+      file: ${{ steps.scrape.outputs.file }}
+      key: ${{ steps.scrape.outputs.key }}
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
+
       - run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+
       - id: scrape
         name: "(run) deno task scrape"
         env:
+          TZ: "London" # ensure we are running in UTC±00:00
           DENO_KV_PATH: ${{ secrets.DENO_KV_PATH }}
           DENO_KV_ACCESS_TOKEN: ${{ secrets.DENO_KV_ACCESS_TOKEN }}
-        shell: bash
-        run: |
-          if ! deno task scrape 2>&1; then
-            echo $'\e[1;101m FAILED \e[0m The scrape was terminated after several failed attempts to fetch new content.\n'
-            echo $'Possibly caused by the source feed being down.\n'
-            exit 0 # prevent hard failure. just do nothing.
-          fi
+        run: deno task scrape 
 
       - name: "(run) upload artifacts"
         uses: actions/upload-artifact@v3
         with:
-          path: ${{ steps.scrape.outputs.filename }}
+          path: ${{ steps.scrape.outputs.file }}
           name: ${{ steps.scrape.outputs.hash }}
         
       - if: ${{ success() }}
         name: "(git) commit + push"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TIME: ${{ steps.scrape.outputs.timestamp }}
-          SIZE: ${{ steps.scrape.outputs.size }}
-          DIFF: ${{ steps.scrape.outputs.diff }}
-          HASH: ${{ steps.scrape.outputs.hash }}
-          FILE: ${{ steps.scrape.outputs.filename }}
-          KEY: ${{ steps.scrape.outputs.key }}
+          OUTPUT_TIME: ${{ steps.scrape.outputs.time }}
+          OUTPUT_SIZE: ${{ steps.scrape.outputs.size }}
+          OUTPUT_DIFF: ${{ steps.scrape.outputs.diff }}
+          OUTPUT_HASH: ${{ steps.scrape.outputs.hash }}
+          OUTPUT_FILE: ${{ steps.scrape.outputs.file }}
+          OUTPUT_KEY: ${{ steps.scrape.outputs.key }}
         run: |
           message=""
           message+='[%s]: 📸 new photo captured\n\nTasks completed by this commit:\n\n'
@@ -58,16 +63,16 @@ jobs:
           message+='> **Warning**: this commit message is auto-generated and may contain errors.\n'
           message="$(
             printf "$message" \
-               "$TIME" \
-               "$(date +%Y-%m-%d --date="$TIME")" \
-               "https://github.com/nberlette/f1/raw/main/${FILE#./}" \
+               "${OUTPUT_TIME-}" \
+               "$(date +%Y-%m-%d --date="${OUTPUT_TIME-}")" \
+               "https://github.com/nberlette/f1/raw/main/${OUTPUT_FILE#./}" \
                "Value" \
                "$(printf '%-64s' "-" | tr ' ' '-')" \
-               "$TIME" \
-               "$HASH" \
-               "$((SIZE / 1024))" \
-               "$((DIFF / 1024))"  \
-               "$FILE" \
-               "$KEY" \
+               "${OUTPUT_TIME-}" \
+               "${OUTPUT_HASH-}" \
+               "$((OUTPUT_SIZE / 1024))" \
+               "$((OUTPUT_DIFF / 1024))"  \
+               "${OUTPUT_FILE-}" \
+               "${OUTPUT_KEY-}" \
           )"
           git add ./assets && git commit -m "${message}" && git push
