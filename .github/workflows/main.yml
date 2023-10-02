@@ -12,7 +12,7 @@ jobs:
       size: ${{ steps.scrape.outputs.size }}
       diff: ${{ steps.scrape.outputs.diff }}
       hash: ${{ steps.scrape.outputs.hash }}
-      file: ${{ steps.scrape.outputs.file }}
+      path: ${{ steps.scrape.outputs.path }}
       key: ${{ steps.scrape.outputs.key }}
     steps:
       - uses: actions/checkout@v3
@@ -38,7 +38,7 @@ jobs:
       - name: "(run) upload artifacts"
         uses: actions/upload-artifact@v3
         with:
-          path: ${{ steps.scrape.outputs.file }}
+          path: ${{ steps.scrape.outputs.path }}
           name: ${{ steps.scrape.outputs.hash }}
         
       - if: ${{ success() }}
@@ -49,7 +49,7 @@ jobs:
           OUTPUT_SIZE: ${{ steps.scrape.outputs.size }}
           OUTPUT_DIFF: ${{ steps.scrape.outputs.diff }}
           OUTPUT_HASH: ${{ steps.scrape.outputs.hash }}
-          OUTPUT_FILE: ${{ steps.scrape.outputs.file }}
+          OUTPUT_PATH: ${{ steps.scrape.outputs.path }}
           OUTPUT_KEY: ${{ steps.scrape.outputs.key }}
         run: |
           message=""
@@ -65,14 +65,14 @@ jobs:
             printf "$message" \
                "${OUTPUT_TIME-}" \
                "$(date +%Y-%m-%d --date="${OUTPUT_TIME-}")" \
-               "https://github.com/nberlette/f1/raw/main/${OUTPUT_FILE#./}" \
+               "https://github.com/nberlette/f1/raw/main/${OUTPUT_PATH#./}" \
                "Value" \
                "$(printf '%-64s' "-" | tr ' ' '-')" \
                "${OUTPUT_TIME-}" \
                "${OUTPUT_HASH-}" \
                "$((OUTPUT_SIZE / 1024))" \
                "$((OUTPUT_DIFF / 1024))"  \
-               "${OUTPUT_FILE-}" \
+               "${OUTPUT_PATH-}" \
                "${OUTPUT_KEY-}" \
           )"
           git add ./assets && git commit -m "${message}" && git push
