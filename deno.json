@@ -1,7 +1,7 @@
 {
   "tasks": {
-    "fmt": "deno fmt --unstable --allow-all",
-    "scrape": "deno run --allow-all --unstable --no-check ./main.ts"
+    "fmt": "deno fmt --unstable -A",
+    "scrape": "TZ=London deno run -A --unstable --no-check ./main.ts"
   },
   "compilerOptions": {
     "lib": ["deno.unstable", "deno.ns", "deno.window"]

@@ -8,8 +8,9 @@ import {
   Sha256,
   writeAll,
 } from "../deps.ts";
+import * as $path from "node:path";
 import { Blobs, kv } from "./db.ts";
-import { debug, exists, isArrayBuffer, timingSafeEqual } from "./helpers.ts";
+import { debug, fs, isArrayBuffer, timingSafeEqual } from "./helpers.ts";
 
 type TimeStampString =
   | `${number}-${number}-${number}T${number}:${number}:${number}${string}`
@@ -41,13 +42,13 @@ const slashRegExp = /(?<!^|\.{1,2})\/(?!$)/;
  */
 export class Image {
   /** The name of the folder where the images are stored. */
-  static folderName = "assets";
+  static readonly folderName = "assets";
 
   /** The Deno KV key prefix for the image hash-to-date index. */
-  static hashTableKey = ["hash_to_date"];
+  static readonly hashTablePrefix = ["hash_to_date"];
 
   /** The name of the file that contains the most recent image. */
-  static latestImageName = "latest.jpg";
+  static readonly latestImageName = "latest.jpg";
 
   #kv: Deno.Kv = kv;
   #path: string | URL = Image.folderName;
@@ -65,28 +66,26 @@ export class Image {
     if (isArrayBuffer(data)) {
       this.#data = data;
     } else if (ArrayBuffer.isView(data)) {
-      const { buffer, byteOffset, byteLength } = data;
-      this.#data = buffer.slice(byteOffset, byteOffset + byteLength);
+      const { buffer } = data;
+      this.#data = buffer
     }
 
-    if (kv) this.#blobs = new Blobs(this.#kv = kv);
-    if (date) this.#date = new Date(date);
+    this.#blobs = new Blobs(this.#kv = kv);
+    this.#date = date ? new Date(date) : new Date();
+
     path ??= Image.folderName;
-    path = `./${
-      path.toString().replace(/^file:\/\//, "").replace(Deno.cwd(), "").replace(
-        /\/$/,
+    path = "./" +
+      path.toString().replace(/^file:\/\/|^\.\/|\/$/g, "").replace(
+        Deno.cwd(),
         "",
-      ).replace(/^\.\//, "")
-    }`;
+      );
     this.#path = path;
     this.#latest = Boolean(latest);
-    debug("Image.constructor", "Creating new image instance.");
-    (async () => await this.sync())();
   }
 
   /**
-   * The underlying `ArrayBuffer` that contains this image's data. If the
-   * image hasn't been loaded yet, this value will be `null`.
+   * The underlying `ArrayBuffer` that contains this image's data. If the image
+   * hasn't been loaded yet, this value will be `null`.
    */
   get buffer(): ArrayBuffer | null {
     return this.#data;
@@ -121,8 +120,8 @@ export class Image {
   }
 
   /** The key used for persisting the image's data a in Deno KV database. */
-  get key(): Deno.KvKey {
-    return Image.dateToPath(this.date, this.latest).split(slashRegExp);
+  get key() {
+    return Image.dateToParts(this.date);
   }
 
   /**
@@ -131,7 +130,7 @@ export class Image {
    * ⚠️ **Note**: this file isn't guaranteed to exist, and may also be relative.
    */
   get path(): string {
-    return `./${Image.dateToPath(this.date, this.latest).replace(/^\.\//, "")}`;
+    return $path.join(...Image.dateToParts(this.date, this.latest));
   }
 
   /**
@@ -151,70 +150,71 @@ export class Image {
 
   /** Synchronizes the image data with the KV store. */
   protected async sync(): Promise<SyncedImage> {
-    if (this.buffer === null) {
-      debug("Image.sync", "Reading image from KV store.");
-      const blob = await this.#blobs.get(this.key);
-      const date = await this.#kv.get<Date>([
-        ...Image.hashTableKey,
-        this.hash,
-      ]);
-
-      if (date.value) {
-        debug("Image.sync", "Setting image date.");
-        this.#date.setTime(date.value.getTime());
-      } else {
-        debug("Image.sync", "Setting KV store cache to current image date.");
-        await this.#kv.set([...Image.hashTableKey, this.hash], this.date);
+    let blob: Uint8Array | null = await this.#blobs.get(this.key);
+    if ((await this.fileExists()) && blob === null) {
+      blob = await this.readFile();
+      const stat = await Deno.stat(this.path);
+      const instanceDate = this.date;
+      const fileStatDate = stat.birthtime ?? instanceDate;
+      // if theres a > 30second discrepancy between the file-system time and
+      // the time in this Image instance, we need to update things.
+      if (Math.abs(instanceDate.getTime() - fileStatDate.getTime()) > 30_000) {
+        this.#date = Image.pathToDate(this.path);
+        this.#data = blob.buffer;
+        const hash = Image.hash(blob, "hex");
+        await Image.setDateForHash(hash, this.date);
       }
-
-      if (blob) {
-        debug("Image.sync", "Setting image data from KV store cache.");
-        this.#data = blob.buffer.slice(
-          blob.byteOffset,
-          blob.byteOffset + blob.byteLength,
-        );
-      } else {
-        throw new ReferenceError(`Blob not found: ${inspect(this.key)}`);
+      await this.#blobs.set(this.key, blob);
+      if (!(await Image.getDateForHash(this.hash))) {
+        await Image.setDateForHash(this.hash, this.date);
       }
-    } else {
-      if (!(await this.exists())) {
-        debug("Image.sync", "Writing image to KV store.");
-        await this.write();
-      }
+      return this as SyncedImage;
     }
 
-    // deno-lint-ignore no-explicit-any
-    return this as any;
+    if (blob) {
+      const hash = Image.hash(blob, "hex");
+      const date = await Image.getDateForHash(hash);
+
+      if (date) {
+        if (date.getTime() !== this.date.getTime()) {
+          debug("Image.sync", "Updating image date to:", date.toJSON());
+          this.date.setTime(date.getTime());
+        }
+      } else {
+        debug("Image.sync", "Setting KV store cache to current image date.");
+        await Image.setDateForHash(hash, this.date);
+      }
+
+      debug("Image.sync", "Setting image data from KV store cache.");
+      this.#data = blob.buffer;
+    } else {
+      throw new ReferenceError(`Blob not found: ${inspect(this.key)}`);
+    }
+
+    return this as SyncedImage;
   }
 
   /** Reads the image's data from the KV store. */
   async read(): Promise<Uint8Array> {
-    if (this.data) {
-      debug(
-        "Image.read",
-        "Returning image data without reading from KV store.",
-      );
-      return this.data;
-    }
+    if (this.data) return this.data;
     debug("Image.read", "Reading image from KV store.");
-    await this.sync();
-    debug("Image.read", "Returning image data after reading from KV store.");
-    return this.data!;
+    return (await this.sync()).data;
   }
 
   /** Writes the image's data to the KV store. */
   async write(): Promise<this> {
     debug("Image.write", "Writing image to KV store.");
     await this.#blobs.set(this.key, await this.read());
-    debug("Image.write", "Writing image date to KV store.");
-    await this.#kv.set([...Image.hashTableKey, this.hash], this.date);
+    if (!(await Image.getDateForHash(this.hash))) {
+      await Image.setDateForHash(this.hash, this.date);
+    }
     return this;
   }
 
   /** Checks whether or not the image's data exists in the KV store. */
   async exists(): Promise<boolean> {
     try {
-      return (await this.#blobs.get(this.key)) != null;
+      return (await this.#blobs.get(this.key)) !== null;
     } catch {
       return false;
     }
@@ -252,6 +252,7 @@ export class Image {
     options?: { create?: boolean; append?: boolean; truncate?: boolean },
   ): Promise<this> {
     path ??= this.path;
+    await fs.ensureFile(path);
     const write = true;
     const { create = true, truncate = true, append = false } = options ?? {};
 
@@ -265,9 +266,9 @@ export class Image {
   }
 
   /** Check if an image exists in a file-system, at an optional custom path. */
-  fileExists(path?: string | URL): boolean {
+  async fileExists(path?: string | URL): Promise<boolean> {
     path ??= this.path;
-    return exists(path);
+    return await fs.exists(path);
   }
 
   /** Delete the image from the file-system, optionally at a custom path. */
@@ -286,16 +287,13 @@ export class Image {
   equals(that: Image | BufferSource): boolean {
     if (this.data === null) return false;
     if (that instanceof Image) {
-      debug("Image.equals", "Comparing image data to another image's data.");
       return timingSafeEqual(this.data, that.data!);
     } else if (ArrayBuffer.isView(that)) {
-      debug("Image.equals", "Comparing image data to an ArrayBuffer.");
       return timingSafeEqual(
         this.data,
         new Uint8Array(that.buffer, that.byteOffset, that.byteLength),
       );
     } else if (isArrayBuffer(that)) {
-      debug("Image.equals", "Comparing image data to an ArrayBuffer.");
       return timingSafeEqual(
         this.data,
         new Uint8Array(that, 0, that.byteLength),
@@ -333,27 +331,30 @@ export class Image {
     return `${this.constructor.name} ${inspect(this.toJSON(), options)}`;
   }
 
+  static dateToParts(date: string | number | Date, latest?: boolean): string[] {
+    date = new Date(date);
+    if (latest) return [Image.folderName, Image.latestImageName];
+
+    let [pathname, filename] = date.toISOString().split(/(?<=\d+)T(?=\d+)/, 2);
+    // sanitize date string for pathname
+    pathname = pathname.replace(/[^0-9\-]+/g, "");
+    // format timestamp for filename
+    filename = `${
+      filename.replace(/(?<=:\d{2})\..+?$/, "").replace(/:/g, "_")
+    }.jpg`;
+
+    return [Image.folderName, pathname, filename];
+  }
+
   /** Converts an image's date to a path string. */
   static dateToPath(date: string | number | Date, latest?: boolean): string {
-    let dir = this.folderName, name = "";
-
-    try {
-      date = new Date(date);
-      const tz = date.getTimezoneOffset();
-      date.setTime(date.getTime() - tz * 60 * 1000);
-      [dir, name] = date.toISOString().split("T");
-      name = name.replace(/:/g, "_").replace(/\..+$/, "");
-    } catch {
-      if (!latest) throw new TypeError(`Invalid date: ${date}`);
-    }
-    return `${Image.folderName}/${
-      latest ? Image.latestImageName : `${dir}/${name}.jpg`
-    }`;
+    return $path.join(...Image.dateToParts(date, latest));
   }
 
   /** Converts an image's path to a date object. */
   static pathToDate(path: string | URL, latest?: boolean): Date {
-    const [dir, name] = path.toString().split(slashRegExp).slice(-2);
+    const dir = $path.basename($path.dirname(path.toString()), ".jpg")
+    const name = $path.basename(path.toString());
 
     if (!dir || !name) {
       throw new Error(
@@ -361,13 +362,10 @@ export class Image {
       );
     }
 
-    const time = name.replace(/\.jpe?g$/, "").replace(/_/g, ":");
-    const date = time === Image.latestImageName.split(".")[0] || latest
+    const time = name.replace(/_/g, ":");
+    const date = time === Image.latestImageName || latest === true
       ? new Date()
-      : new Date(`${dir}T${time}`);
-
-    const tz = date.getTimezoneOffset();
-    date.setTime(date.getTime() + tz * 60 * 1000);
+      : new Date(`${dir}T${time.replace(/\.jpe?g$/, "")}Z`);
 
     return date;
   }
@@ -379,13 +377,13 @@ export class Image {
     latest?: boolean,
   ): Promise<Image> {
     const hash = Image.hash(data, "hex");
-    const cached = await kv.get<Date>([...Image.hashTableKey, hash]);
-    if (cached.value && cached.versionstamp && !latest) {
-      return new Image(cached.value, data, parent, latest);
-    } else {
-      if (!latest) await kv.set([...Image.hashTableKey, hash], date);
-      return new Image(date, data, parent, latest);
+    const cached = await Image.getDateForHash(hash);
+    if (cached && !latest) {
+      return new Image(cached, data, parent, latest);
+    } else if (!latest) {
+      await kv.set([...Image.hashTablePrefix, hash], date);
     }
+    return new Image(date, data, parent, latest);
   }
 
   /**
@@ -398,7 +396,7 @@ export class Image {
     latest?: boolean,
   ): Promise<Image> {
     const path = Image.dateToPath(date, latest);
-    if (exists(path)) return await Image.fromFile(path, latest);
+    if ((await fs.exists(path))) return await Image.fromFile(path, latest);
     return new Image(Image.pathToDate(path), null, null, latest);
   }
 
@@ -406,13 +404,10 @@ export class Image {
   static async fromFile(path: string | URL, latest?: boolean): Promise<Image> {
     const date = Image.pathToDate(path, latest);
     const parent = path.toString().split(slashRegExp).slice(0, -2).join("/");
-    if (!exists(path)) throw new ReferenceError(`File not found: ${path}`);
-
-    debug("Image.fromFile", "Reading image from file-system.");
-    const data = await Deno.readFile(path);
+    if (!(await fs.exists(path))) throw new ReferenceError(`File not found: ${path}`);
 
     debug("Image.fromFile", "Creating image from file-system data.");
-    const img = await Image.fromData(data, date, parent, latest);
+    const img = await Image.fromData(await Deno.readFile(path), date, parent, latest);
 
     img.latest = latest ?? path.toString().endsWith(Image.latestImageName);
     return img;
@@ -441,10 +436,54 @@ export class Image {
     return await Image.fromReader(reader, latest);
   }
 
-  static hash(data: BufferSource | Image, digest?: "hex" | undefined): string;
-  static hash(data: BufferSource | Image, digest: "array"): number[];
-  static hash(data: BufferSource | Image, digest: "buffer"): ArrayBuffer;
-  static hash(data: BufferSource | Image, digest?: string) {
+  private static async getDateForHash(
+    hash: string | number[] | ArrayBuffer,
+  ): Promise<Date | null> {
+    return (await kv.get<Date>(Image.formatHashTableKey(hash))).value;
+  }
+
+  private static async setDateForHash(
+    hash: string | number[] | ArrayBuffer,
+    date: Date,
+  ): Promise<
+    {
+      readonly key: Deno.KvKey;
+      readonly ok: false;
+      readonly versionstamp: null;
+    } | {
+      readonly key: Deno.KvKey;
+      readonly ok: true;
+      readonly versionstamp: string;
+    }
+  > {
+    const key = Image.formatHashTableKey(hash);
+    const res = await kv.atomic().check({ key, versionstamp: null }).set(
+      key,
+      date,
+    ).commit();
+
+    const { ok = false, versionstamp = null } = { versionstamp: null, ...res };
+
+    if (ok && versionstamp) return { key, ok, versionstamp } as const;
+    return { key, ok: false, versionstamp: null } as const;
+  }
+
+  private static formatHashTableKey(hash: string | number[] | ArrayBuffer) {
+    if (isArrayBuffer(hash)) hash = [...new Uint8Array(hash)];
+    if (Array.isArray(hash)) hash = hash.map((b) => b.toString(16)).join("");
+    return [...Image.hashTablePrefix, hash];
+  }
+
+  private static hash(
+    data: BufferSource | Image,
+    digest?: "hex" | undefined,
+  ): string;
+  private static hash(data: BufferSource | Image, digest: "array"): number[];
+  private static hash(
+    data: BufferSource | Image,
+    digest: "buffer",
+  ): ArrayBuffer;
+  private static hash(data: BufferSource | Image, digest?: string) {
     const sha = new Sha256(/* is224 */ false, /* isSharedMemory */ false);
     const buffer = data instanceof Image || ArrayBuffer.isView(data)
       ? data.buffer?.slice(0)

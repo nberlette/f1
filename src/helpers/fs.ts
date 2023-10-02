@@ -1,6 +1,8 @@
-export function exists(path: string | URL): boolean {
-  return sizeof(path) > 0;
-}
+import {
+  existsSync as exists,
+} from "https://deno.land/std@0.203.0/fs/mod.ts";
+
+export * from "https://deno.land/std@0.203.0/fs/mod.ts";
 
 export function link(
   from: string | URL,
