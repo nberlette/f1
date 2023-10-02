@@ -37,7 +37,6 @@ jobs:
         
       - name: "(git) commit + push"
         env:
-          TZ: London
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OUTPUT_TIME: ${{ steps.scrape.outputs.time }}
           OUTPUT_SIZE: ${{ steps.scrape.outputs.size }}
@@ -46,10 +45,10 @@ jobs:
           OUTPUT_PATH: ${{ steps.scrape.outputs.path }}
           OUTPUT_KEY: ${{ steps.scrape.outputs.key }}
         run: |
-          TIME_UNIX="$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "${OUTPUT_TIME-}" +"%s")"
+          OUTPUT_DATE="$(echo -n "${OUTPUT_TIME-}" | cut -dT -f1)"
           message=""
           message+='[%s]: 📸 new photo captured\n\nTasks completed by this commit:\n\n'
-          message+='- [x] updated latest image with the new data\n- [x] saved in the assets folder under %(%F)T\n'
+          message+='- [x] updated latest image with the new data\n- [x] saved in the assets folder under %s\n'
           message+='- [x] saved blob in Deno KV under the key below\n- [x] hash indexed in Deno KV for de-duping\n\n'
           message+='📎 View: %s\n\n| Description   | %-64s |\n| ------------- | %-64s |\n| Time (in UTC) | %-64s |\n'
           message+='| Hash (SHA256) | %-64s |\n| Size (KBytes) | %-64.2f |\n| Diff (KBytes) | %+-64.2f |\n'
@@ -60,7 +59,7 @@ jobs:
             printf \
                "$message" \
                "${OUTPUT_TIME-}" \
-               "${TIME_UNIX-}" \
+               "${OUTPUT_DATE-}" \
                "https://github.com/nberlette/f1/raw/main/${OUTPUT_PATH#./}" \
                "Value" \
                "$(printf '%-64s' "-" | tr ' ' '-')" \
