@@ -29,7 +29,12 @@ export const BLOB_KEY = "__BLOB__";
  */
 export const DELAY = 30_000;
 
-export const ATTEMPTS = 5;
+/** 
+ * Maximum of 10 attempts x 30_000 ms delay = 5 minutes max delay time. 
+ *
+ * After that, we fail hard. 
+ */
+export const ATTEMPTS = 10;
 
 // #endregion Scrape Config
 
@@ -53,8 +58,7 @@ export const TEXT = {
   wrote: `🆕 WROTE {path} \u001b[{color}m↑ {size}\u001b[0m`,
   created: `🆕 CREATED {path} \u001b[{color}m↑ {size}\u001b[0m`,
   error: `🚨 \u001b[1;31mERROR\u001b[0m \u001b[{color}m{message}\u001b[0m`,
-  retry:
-    `⏱️ {label} · retrying in {time}s... \u001b[2m({attempts} attempts remaining)\u001b[0m`,
+  retry: `⏱️ {label} · retrying in {time}s... \u001b[2m({attempts} attempts remaining)\u001b[0m`,
 } as const;
 
 /**
