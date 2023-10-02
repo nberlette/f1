@@ -1,0 +1,138 @@
+name: Timelapse
+on:
+  schedule:
+    - cron: "45 6 * * *"
+    - cron: "30 6 * * SUN"
+  workflow_dispatch:
+    inputs:
+      timeframe:
+        type: choice
+        options:
+          - daily
+          - weekly
+        required: true
+        description: "Choose the timeframe to generate a timelapse for: either the last 24 hours, or the last 7 days."
+jobs:
+  metadata:
+    runs-on: macos-latest
+    outputs:
+      daily_files: ${{ steps.daily.outputs.files }}
+      daily_dates: ${{ steps.daily.outputs.dates }}
+      weekly_files: ${{ steps.weekly.outputs.files }}
+      weekly_dates: ${{ steps.weekly.outputs.dates }}
+    steps:
+      - id: daily
+        name: "(setup) collect daily items"
+        run: |
+          dates=($(cd assets && \ls --color=never -t1 --time=ctime -I "*.jpg")
+          
+          today="${dates[-1]}"
+          echo "dates=[\"${today}\"]" >> "$GITHUB_OUTPUT"
+
+          items=($(find "./assets/${today-}" -type f -name "*.jpg"))
+          files="[$(printf '"%s",' "${items[@]}" | sed 's/,$//')]"
+          echo "files=${files}" >> "$GITHUB_OUTPUT"
+      - id: weekly
+        name: "(setup) collect weekly items"
+        run: |
+          dates=($(cd assets && \ls --color=never -t1 --time=ctime -I "*.jpg")
+          
+          # collect the dates for the last 7 days, output to github output
+          dates=("${dates[@]: -7}")
+          week="[$(printf '"%s",' "${dates[@]}" | sed 's/,$//')]"
+          echo "dates=${week}" >> "$GITHUB_OUTPUT"
+
+          # collect the files for the last 7 days, output to github output
+          items=($(find "./assets/${dates[@]}" -type f -name "*.jpg"))
+          files="[$(printf '"%s",' "${items[@]}" | sed 's/,$//')]"
+          echo "files=${files}" >> "$GITHUB_OUTPUT"
+
+  daily:
+    if: ${{(github.event_name=='schedule'&&github.event.schedule=='45 6 * * *')||(github.event_name=='workflow_dispatch'&&github.event.inputs.timeframe=='daily')}}
+    name: "Generate Timelapse: Today's Images"
+    runs-on: macos-latest
+    steps:
+      - name: "(setup) checkout repository"
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: "(setup) install ffmpeg"
+        run: brew install ffmpeg
+
+      - name: "(generate) daily timelapse video"
+        env:
+          FILES: ${{ steps.metadata.outputs.daily_files }}
+          DATES: ${{ steps.metadata.outputs.daily_dates }}
+        run: |
+          files=$(jq -r '.[]' <<< "${FILES}")
+          dates=$(jq -r '.[0]' <<< "${DATES}")
+          TIMELAPSE_PATH="daily_timelapse_${dates}.mp4"
+          echo "TIMELAPSE_PATH=${TIMELAPSE_PATH-}" >> $GITHUB_ENV
+          ffmpeg \
+            -r 30 \
+            -i "${files[@]-}" \
+            -s 1920x1080 \
+            -vcodec libx264 \
+            -crf 17 \
+            -pix_fmt yuv420p \
+            -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
+            -an \
+            -preset slow \ 
+            -tune film \
+            -movflags +faststart \
+            -metadata title="Timelapse: $dates" \
+            -metadata year="${dates:0:4}" \
+            -metadata description="Timelapse video for $dates" \
+            "${TIMELAPSE_PATH-}"
+
+      - name: Upload Daily Timelapse
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.TIMELAPSE_PATH }}
+          path: ${{ env.TIMELAPSE_PATH }}
+
+  weekly:
+    if: ${{(github.event_name=='schedule'&&github.event.schedule=='30 6 * * SUN')||(github.event_name=='workflow_dispatch'&&github.event.inputs.timeframe=='weekly')}}
+    name: "Generate Weekly Timelapse"
+    runs-on: macos-latest
+    steps:
+      - name: "(setup) checkout repository"
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: "(setup) install ffmpeg"
+        run: brew install ffmpeg
+
+      - name: "(generate) weekly timelapse video"
+        env:
+          FILES: ${{ steps.metadata.outputs.weekly_files }}
+          DATES: ${{ steps.metadata.outputs.weekly_dates }}
+        run: |
+          files=$(jq -r '.[]' <<< "${FILES}")
+          dates=$(jq -r '.[]' <<< "${DATES}")
+          TIMELAPSE_PATH="weekly_timelapse_${dates[0]}.mp4"
+          echo "TIMELAPSE_PATH=${TIMELAPSE_PATH-}" >> $GITHUB_ENV
+          ffmpeg \
+            -r 30 \
+            -i "${files[@]-}" \
+            -s 1920x1080 \
+            -vcodec libx264 \
+            -crf 17 \
+            -pix_fmt yuv420p \
+            -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
+            -an \
+            -preset slow \ 
+            -tune film \
+            -movflags +faststart \
+            -metadata title="Timelapse: ${dates[0]} - ${dates[-1]}" \
+            -metadata year="${dates:0:4}" \
+            -metadata description="Timelapse video for the week of ${dates[0]}" \
+            "${TIMELAPSE_PATH-}"
+
+      - name: Upload Weekly Timelapse
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.TIMELAPSE_PATH }}
+          path: ${{ env.TIMELAPSE_PATH }}
