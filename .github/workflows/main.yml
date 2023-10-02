@@ -1,7 +1,7 @@
 name: Scrape
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/12 * * * *"
   workflow_dispatch:
 jobs:
   scrape:
@@ -34,15 +34,8 @@ jobs:
           DENO_KV_PATH: ${{ secrets.DENO_KV_PATH }}
           DENO_KV_ACCESS_TOKEN: ${{ secrets.DENO_KV_ACCESS_TOKEN }}
         run: deno task scrape 
-
-      - name: "(run) upload artifacts"
-        uses: actions/upload-artifact@v3
-        with:
-          path: ${{ steps.scrape.outputs.path }}
-          name: ${{ steps.scrape.outputs.hash }}
         
-      - if: ${{ success() }}
-        name: "(git) commit + push"
+      - name: "(git) commit + push"
         env:
           TZ: London
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -79,3 +72,11 @@ jobs:
                "${OUTPUT_KEY-}" \
           )"
           git add ./assets && git commit -m "${message}" && git push
+
+      - if: ${{ success() }}
+        name: "(run) upload artifacts"
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ steps.scrape.outputs.path }}
+          name: ${{ steps.scrape.outputs.hash }}
+
