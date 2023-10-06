@@ -21,19 +21,15 @@ jobs:
     steps:
       - name: "(git) configure repo"
         run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name "${{ github.actor }}[bot]"
           git config --global fetch.parallel 32
-          # occasionally a runner starts up and there have been outside changes made
-          # to the repository in the meantime. fetching and pulling explicitly here
-          # to ensure we have the latest commit history so the run will not fail.
-          git fetch
-          git pull --force
           
       - name: "(git) checkout repo"
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          sparse-checkout: assets
+          ref: main
 
       - uses: denoland/setup-deno@v1
         with:
