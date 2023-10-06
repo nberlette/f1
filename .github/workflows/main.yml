@@ -28,7 +28,7 @@ jobs:
       - name: "(git) checkout repo"
         uses: actions/checkout@v3
         with:
-          sparse-checkout: assets
+          # sparse-checkout: .
           ref: main
 
       - uses: denoland/setup-deno@v1
