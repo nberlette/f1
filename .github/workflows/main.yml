@@ -1,12 +1,17 @@
 name: Scrape
 on:
   schedule:
-    - cron: "*/12 * * * *"
+    - cron: ${{ matrix.schedule }}
   workflow_dispatch:
 jobs:
   scrape:
     name: "Scrape latest photo"
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest]
+        deno-version: [v1.x]
+        schedule: ["*/12 * * * *"]
     outputs:
       time: ${{ steps.scrape.outputs.time }}
       size: ${{ steps.scrape.outputs.size }}
@@ -15,18 +20,26 @@ jobs:
       path: ${{ steps.scrape.outputs.path }}
       key: ${{ steps.scrape.outputs.key }}
     steps:
-      - uses: actions/checkout@v3
+      - name: "(git) configure repo"
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git config --global fetch.parallel 32
+          # occasionally a runner starts up and there have been outside changes made
+          # to the repository in the meantime. fetching and pulling explicitly here
+          # to ensure we have the latest commit history so the run will not fail.
+          git fetch
+          git pull --force
+          
+      - name: "(git) checkout repo"
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.x
-
-      - run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-
+          deno-version: ${{ matrix.deno-version }}
+          
       - id: scrape
         name: "(run) deno task scrape"
         env:
@@ -38,7 +51,7 @@ jobs:
       - name: "(git) commit + push"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OUTPUT_TIME: ${{ steps.scrape.outputs.time }}
+          OUTPUT_TIME: ${{ fromJSON(steps.scrape.outputs.time) }}
           OUTPUT_SIZE: ${{ steps.scrape.outputs.size }}
           OUTPUT_DIFF: ${{ steps.scrape.outputs.diff }}
           OUTPUT_HASH: ${{ steps.scrape.outputs.hash }}
