@@ -1,6 +1,4 @@
-import {
-  existsSync as exists,
-} from "https://deno.land/std@0.203.0/fs/mod.ts";
+import { existsSync as exists } from "https://deno.land/std@0.203.0/fs/mod.ts";
 
 export * from "https://deno.land/std@0.203.0/fs/mod.ts";
 

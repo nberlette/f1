@@ -67,7 +67,7 @@ export class Image {
       this.#data = data;
     } else if (ArrayBuffer.isView(data)) {
       const { buffer } = data;
-      this.#data = buffer
+      this.#data = buffer;
     }
 
     this.#blobs = new Blobs(this.#kv = kv);
@@ -353,7 +353,7 @@ export class Image {
 
   /** Converts an image's path to a date object. */
   static pathToDate(path: string | URL, latest?: boolean): Date {
-    const dir = $path.basename($path.dirname(path.toString()), ".jpg")
+    const dir = $path.basename($path.dirname(path.toString()), ".jpg");
     const name = $path.basename(path.toString());
 
     if (!dir || !name) {
@@ -404,10 +404,17 @@ export class Image {
   static async fromFile(path: string | URL, latest?: boolean): Promise<Image> {
     const date = Image.pathToDate(path, latest);
     const parent = path.toString().split(slashRegExp).slice(0, -2).join("/");
-    if (!(await fs.exists(path))) throw new ReferenceError(`File not found: ${path}`);
+    if (!(await fs.exists(path))) {
+      throw new ReferenceError(`File not found: ${path}`);
+    }
 
     debug("Image.fromFile", "Creating image from file-system data.");
-    const img = await Image.fromData(await Deno.readFile(path), date, parent, latest);
+    const img = await Image.fromData(
+      await Deno.readFile(path),
+      date,
+      parent,
+      latest,
+    );
 
     img.latest = latest ?? path.toString().endsWith(Image.latestImageName);
     return img;

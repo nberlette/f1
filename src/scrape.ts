@@ -58,8 +58,8 @@ export async function scrape() {
         keepalive: false,
         redirect: "follow",
         headers: {
-          "Cache-Control": "no-cache, no-store, max-age=0, s-maxage=0"
-        }
+          "Cache-Control": "no-cache, no-store, max-age=0, s-maxage=0",
+        },
       });
       const image = await Image.fromStream(res.body!);
       debug("scrape.read(): incoming image");
