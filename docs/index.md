@@ -21,7 +21,7 @@ track's developers. This project is not affiliated with [Formula 1][formula1].
 ---
 
 <!-- deno-fmt-ignore -->
-### [📸 **Latest Snapshot**][latest-snapshot] · [🗓️ **Previous Snapshots**][previous-snapshots] · [🌟 **Star on GitHub**][Star on GitHub] · ℹ️ [**More Information**][about]
+#### [📸 **Latest Snapshot**][latest-snapshot] · [🗓️ **Previous Snapshots**][previous-snapshots] · [🌟 **Star on GitHub**][Star on GitHub] · ℹ️ [**More Information**][about]
 
 ---
 
