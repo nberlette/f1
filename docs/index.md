@@ -20,9 +20,8 @@ track's developers. This project is not affiliated with [Formula 1][formula1].
 
 ---
 
-[📸 **Latest Snapshot**][latest-snapshot] ·
-[🗓️ **Previous Snapshots**][previous-snapshots] ·
-[🌟 **Star on GitHub**][Star on GitHub] · ℹ️ [**More Information**][about]
+<!-- deno-fmt-ignore -->
+### [📸 **Latest Snapshot**][latest-snapshot] · [🗓️ **Previous Snapshots**][previous-snapshots] · [🌟 **Star on GitHub**][Star on GitHub] · ℹ️ [**More Information**][about]
 
 ---
 
@@ -84,7 +83,7 @@ Thanks for stopping by!
 </thead>
 <tbody>
 <tr>
-<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-06/22_19_08.jpg?raw=true" title="2023-10-06T22:19:08" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-06/22_19_08.jpg?raw=true" alt="2023-10-06T22:19:08a"style="border-radius:8px" /></a></td>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-06/22_19_08.jpg?raw=true" title="2023-10-06T22:19:08" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-06/22_19_08.jpg?raw=true" alt="2023-10-06T22:19:08" style="border-radius:8px" /></a></td>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-05/22_19_31.jpg?raw=true" title="2023-10-05T22:19:31" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-05/22_19_31.jpg?raw=true" alt="2023-10-05T22:19:31" style="border-radius:8px" /></a></td>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-04/22_19_54.jpg?raw=true" title="2023-10-04T22:19:54" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-04/22_19_54.jpg?raw=true" alt="2023-10-04T22:19:54" style="border-radius:8px" /></a></td>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-03/22_20_37.jpg?raw=true" title="2023-10-03T22:20:37" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-03/22_20_37.jpg?raw=true" alt="2023-10-03T22:20:37" style="border-radius:8px" /></a></td>
