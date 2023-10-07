@@ -1,7 +1,3 @@
----
-title: "Automated Image Scraper with Deno + GitHub Actions 🏎️ @nberlette/f1"
----
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./img/f1_artwork_4.png">
   <img alt="AI-generated artwork of a Formula 1 car racing down the Las Vegas Strip" src="./img/f1_artwork_3.png">
@@ -12,15 +8,15 @@ title: "Automated Image Scraper with Deno + GitHub Actions 🏎️ @nberlette/f1
 ## Scraping build photos of the Formula 1 track in Las Vegas
 
 This is an autonomous image scraper developed using [TypeScript], [Deno], and
-[GitHub Actions]. It was purpose-built to document the historic [Formula 1][formula1]
-track construction in [Las Vegas, Nevada][formula1-official-site], slated
-to host the inaugural Heineken Silver Grand Prix on November 18th. The images
-will be stitched together to form timelapse videos of the track's lifecycle.
+[GitHub Actions]. It was purpose-built to document the historic
+[Formula 1][formula1] track construction in
+[Las Vegas, Nevada][formula1-official-site], slated to host the inaugural
+Heineken Silver Grand Prix on November 18th. The images will be stitched
+together to form timelapse videos of the track's lifecycle.
 
 Since June 3rd, 2023 this project has collected in excess of 15,000 images,
 courtesy of a live-streaming [construction camera][oxblue] provided by the
 track's developers. This project is not affiliated with [Formula 1][formula1].
-
 
 ---
 
@@ -30,9 +26,9 @@ track's developers. This project is not affiliated with [Formula 1][formula1].
 
 ---
 
-| Estimated Top Speed | Circuit Length | Corners | Straights | DRS Zones |
-| --- | --- | --- | --- | --- |
-| 212 mph • 342 km/h | 3.8 miles • 6.12 km | 17  | 3 | 2 |
+| Estimated Top Speed | Circuit Length      | Corners | Straights | DRS Zones |
+| ------------------- | ------------------- | ------- | --------- | --------- |
+| 212 mph • 342 km/h  | 3.8 miles • 6.12 km | 17      | 3         | 2         |
 
 ---
 

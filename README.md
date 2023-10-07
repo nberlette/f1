@@ -7,21 +7,20 @@
 
 ---
 
-
 <div align="center">
 
 ## Scraping photos of the Las Vegas Formula 1 track's construction
 
 This is an autonomous image scraper developed using [TypeScript], [Deno], and
-[GitHub Actions]. It was purpose-built to document the historic [Formula 1][formula1]
-track construction in [Las Vegas, Nevada][formula1-official-site], slated
-to host the inaugural Heineken Silver Grand Prix on November 18th. The images
-will be stitched together to form timelapse videos of the track's lifecycle.
+[GitHub Actions]. It was purpose-built to document the historic
+[Formula 1][formula1] track construction in
+[Las Vegas, Nevada][formula1-official-site], slated to host the inaugural
+Heineken Silver Grand Prix on November 18th. The images will be stitched
+together to form timelapse videos of the track's lifecycle.
 
 Since June 3rd, 2023 this project has collected in excess of 15,000 images,
 courtesy of a live-streaming [construction camera][oxblue] provided by the
 track's developers. This project is not affiliated with [Formula 1][formula1].
-
 
 ---
 
@@ -31,9 +30,9 @@ track's developers. This project is not affiliated with [Formula 1][formula1].
 
 ---
 
-| Estimated Top Speed | Circuit Length | Corners | Straights | DRS Zones |
-| --- | --- | --- | --- | --- |
-| 212 mph • 342 km/h | 3.8 miles • 6.12 km | 17  | 3 | 2 |
+| Estimated Top Speed | Circuit Length      | Corners | Straights | DRS Zones |
+| ------------------- | ------------------- | ------- | --------- | --------- |
+| 212 mph • 342 km/h  | 3.8 miles • 6.12 km | 17      | 3         | 2         |
 
 </div>
 
