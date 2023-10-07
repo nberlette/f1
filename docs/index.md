@@ -9,8 +9,6 @@ title: "Automated Image Scraper with Deno + GitHub Actions 🏎️ @nberlette/f1
 
 ---
 
-<div align="center">
-
 ## Scraping build photos of the Formula 1 track in Las Vegas
 
 This is an autonomous image scraper developed using [TypeScript], [Deno], and
@@ -35,8 +33,6 @@ track's developers. This project is not affiliated with [Formula 1][formula1].
 | Estimated Top Speed | Circuit Length | Corners | Straights | DRS Zones |
 | --- | --- | --- | --- | --- |
 | 212 mph • 342 km/h | 3.8 miles • 6.12 km | 17  | 3 | 2 |
-
-</div>
 
 ---
 
