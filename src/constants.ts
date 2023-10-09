@@ -41,11 +41,11 @@ export const ATTEMPTS = 10;
 // #region Source Config
 
 /** The size of the image to scrape. */
-export const IMAGE_SIZE = "1024x768";
+export const IMAGE_SIZE = "2048x1536";
 
 /** The endpoint URL for the live photo stream we will scrape. */
 export const IMAGE_URL =
-  "https://oxblue.com/archive/a4ed2c099b4f3d942fd3d69702cd6d6b/1024x768.jpg";
+  "https://oxblue.com/archive/a4ed2c099b4f3d942fd3d69702cd6d6b/2048x1536.jpg";
 
 // #endregion Source Config
 
