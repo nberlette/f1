@@ -1,46 +1,32 @@
 # 🏎️ @nberlette/f1 <img align=right src ="https://img.shields.io/github/actions/workflow/status/nberlette/f1/main.yml?label=Scrape%20Images%20&logo=github&style=for-the-badge&color=blue" />
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/img/f1_artwork_4.png">
-  <img alt="AI-generated artwork of a Formula 1 car racing down the Las Vegas Strip" src="./docs/img/f1_artwork_3.png">
-</picture>
-
----
-
-<div align="center">
-
 ## Scraping photos of the Las Vegas Formula 1 track's construction
 
 This is an autonomous image scraper developed using [TypeScript], [Deno], and
-[GitHub Actions]. It was purpose-built to document the historic
-[Formula 1][formula1] track construction in
-[Las Vegas, Nevada][formula1-official-site], slated to host the inaugural
-Heineken Silver Grand Prix on November 18th. The images will be stitched
+[GitHub Actions]. It was purpose-built to document the historic [Formula 1][formula1]
+track construction in [Las Vegas, Nevada][formula1-official-site], slated to host the
+inaugural Heineken Silver Grand Prix on November 18th. The images will be stitched
 together to form timelapse videos of the track's lifecycle.
 
-Since June 3rd, 2023 this project has collected in excess of 15,000 images,
-courtesy of a live-streaming [construction camera][oxblue] provided by the
-track's developers. This project is not affiliated with [Formula 1][formula1].
-
----
-
-[📸 **Latest Snapshot**][latest-snapshot] ·
-[🗓️ **Previous Snapshots**][previous-snapshots] ·
-[🌟 **Star on GitHub**][Star on GitHub] · ℹ️ [**More Information**][about]
-
----
+#### Track Details and Statistics
 
 | Estimated Top Speed | Circuit Length      | Corners | Straights | DRS Zones |
 | ------------------- | ------------------- | ------- | --------- | --------- |
 | 212 mph • 342 km/h  | 3.8 miles • 6.12 km | 17      | 3         | 2         |
 
-</div>
+<div align="center">
+
+---
+
+[📸 **Latest Snapshot**][latest-snapshot] · [🗓️ **Previous Snapshots**][previous-snapshots] · [🌟 **Star on GitHub**][Star on GitHub] · ℹ️ [**More Information**][about]
 
 ---
 
 ## Latest Snapshot
 
 <a href="https://github.com/nberlette/f1/blob/main/assets/latest.jpg?raw=true" title="The latest image scraped from the Formula 1 track build in Las Vegas"><img src="https://github.com/nberlette/f1/blob/main/assets/latest.jpg?raw=true" alt="The latest image scraped from the Formula 1 track build in Las Vegas" style="border-radius:8px" /></a>
+
+</div>
 
 ---
 
@@ -50,32 +36,40 @@ The first scrape happened on June 3rd, 2023. As of October 1st, it has amassed
 **over 16,000 photos** from **_two_ build sites**, equivalent to over **1.0GB**
 of input material for the timelapse process.
 
-### Where are the photos?
-
 The photos are stored in the public [**GitHub Repository**][readme], thanks to
 GitHub's wonderful free storage for open source projects. They're also persisted
 to a [FoundationDB]-backed [**Deno KV** database][Deno KV].
 
+### Tools Used
+
+- [x] [`Deno v1.37.1`][Deno v1.37.1]
+- <small>Rust-based JS runtime, sandboxed, with great TS/TSX support.</small>
+- <small>Provides the tools for network and file system operations.</small>
+- [x] [`TypeScript 5.2.2`][TypeScript]
+- <small>Superset of JavaScript featuring advanced static typechecking.</small>
+- <small>Better type safety means more readable and maintainable code.</small>
+- [x] [`GitHub Actions`][GitHub Actions]
+- <small>Provides **free** macOS virtual machines powering the scraper.</small>
+- <small>Responsible for scheduled execution of the scraper [workflow]</small>
+- <small>Temporarily stores the image [artifacts](#workflow-artifacts)</small>
+- [x] [`Deno KV`][Deno KV Docs] <small> _(currently in beta)_</small>
+- <small>Provides us with global data persistence and caching</small>
+- [x] [`ffmpeg`][ffmpeg] <small> _(timelapse feature coming soon)_</small>
+- <small>Leveraged by GitHub Actions to compile timelapse videos</small>
+
+### Image Source
+
+The data source on the scraped images is an updating live photo feed sourced
+from the official Formula 1 website. As long as it remains up and transmitting
+data, this project will continue to auto-update.
+
 ### Who made this?
 
 This project is maintained by [**Nicholas Berlette**][nberlette], developed as
-an [**open source project**][readme] entirely in his spare time.
-
-Tech stack includes [**TypeScript**][typescript], [**Deno**][deno],
+an [**open source project**][readme] using [**TypeScript**][typescript], [**Deno**][deno],
 [**Deno KV**][Deno KV], and [**GitHub Actions**][GitHub Actions].
 
 > ⚠️ This non-commercial project is for educational purposes only.
-
-### [**Star it on GitHub! ⭐**][Star on GitHub]
-
-If you find this project intriguing, consider interacting with it on GitHub. By
-starring the repository, you can help it gain more visibility. If you have a
-suggestion or want to report a bug, feel free to open an issue or contribute to
-the project by making a pull request.
-
-Thanks for stopping by!
-
-— Nicholas Berlette
 
 ---
 
@@ -143,41 +137,47 @@ example, an image captured at `2023-07-09T04:28:57` would be saved as
 The latest image is always saved as [`./assets/latest.jpg`][latest-img] for easy
 access.
 
-#### Cloud Persistence
 
-Each image is also persisted in a Deno KV database, backed by FoundationDB on
-the edge thanks to Deno Deploy. For added redundancy and convenience.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/img/f1_artwork_4.png">
+  <img alt="AI-generated artwork of a Formula 1 car racing down the Las Vegas Strip" src="./docs/img/f1_artwork_3.png">
+</picture>
 
-#### Workflow Artifacts
+## Scrape Process, Step-by-Step
 
-All scraped assets are also saved as GitHub Workflow artifacts for 90 days,
-allowing remote access without having to clone all the images.
-
-### Tools Used
-
-- [x] [`Deno v1.37.1`][Deno v1.37.1]
-- <small>Rust-based JS runtime, sandboxed, with great TS/TSX support.</small>
-- <small>Provides the tools for network and file system operations.</small>
-- [x] [`TypeScript 5.2.2`][TypeScript]
-- <small>Superset of JavaScript featuring advanced static typechecking.</small>
-- <small>Better type safety means more readable and maintainable code.</small>
-- [x] [`GitHub Actions`][GitHub Actions]
-- <small>Provides **free** macOS virtual machines powering the scraper.</small>
-- <small>Responsible for scheduled execution of the scraper [workflow]</small>
-- <small>Temporarily stores the image [artifacts](#workflow-artifacts)</small>
-- [x] [`Deno KV`][Deno KV Docs] <small> _(currently in beta)_</small>
-- <small>Provides us with global data persistence and caching</small>
-- [x] [`ffmpeg`][ffmpeg] <small> _(timelapse feature coming soon)_</small>
-- <small>Leveraged by GitHub Actions to compile timelapse videos</small>
-
-### Image Source
-
-The data source on the scraped images is an updating live photo feed sourced
-from the official Formula 1 website. As long as it remains up and transmitting
-data, this project will continue to auto-update.
-
-> This project will continue to update until the track is completed, but could
-> be discontinued at any time if the image stream becomes unavailable.
+1. GitHub Actions runs the scrape workflow every ~10 minutes, depending on traffic.
+2. The runner checks out the repository and installs [Deno][deno].
+3. The command `deno task scrape` is run, invoking the [`main.ts`][main.ts]
+   file in the project root.
+4. [`main.ts`][main.ts] imports `scrape` and double-checks that it is only being run
+   as the main module. If so, it immediately calls [`scrape()`][src-scrape.ts], which
+   contains two inner functions, `read` and `write`. The following steps are taken:
+   1. [`read()`][src-scrape.ts] is called with [`IMAGE_URL`][src-constants.ts]
+      1. Internally the [Fetch API] is used to scrape the image source.
+      2. If the request fails, it will be retried up to the number of times
+         defined by [`ATTEMPTS`][src-constants.ts], pausing between each attempt.
+      3. If all attempts are exhausted without success, it will **terminate**.
+      4. If it succeeds, returns a new [`Image`][src-image.ts] instance.
+   2. [`write()`][src-scrape.ts] is called with the [`Image`][src-image.ts] instance
+      returned from step 1 as its only argument.
+      1. The image is compared for equality against the latest image, using a
+         timing-safe equality check to avoid exposure to timing-based attacks.
+         - If they are equal, the image has not updated at the origin. The scrape
+           will start over at **step 4** and repeat until a new image is found.
+         - If the maximum number of [`ATTEMPTS`][src-constants.ts] is reached and
+           no new image was found, the job will **terminate unsuccessfully**.
+      2. If we've made it this far, we have a fresh image and we need to store
+         it. It is written to `Deno KV` via [`Image.write()`][src-image.ts].
+      3. The image is written to a file by [`Image.writeFile()`][src-image.ts]
+         with our [naming conventions](#assets-and-data), and logged to `stdout`.
+      4. The image is written to [`./assets/latest.jpg`][latest-img], and the size
+         difference is logged to `stdout` and GitHub Actions Outputs.
+      5. The [`setOutput`][src-helpers-actions.ts] method is called with all of
+         the metadata for the image, so the runner can process it further.
+   3. The scrape is now complete and the runner proceeds to the next step.
+6. The photo is stored as a GitHub Workflow artifact for **90 days**.
+7. The changes are committed and pushed to the repository.
+8. The job completes and the runner is terminated **successfully**.
 
 ---
 
@@ -188,55 +188,6 @@ data, this project will continue to auto-update.
 
 > AI-generated F1 art created with [SDXL 1.0][sdxl] and the prompt
 > `"Formula 1 cars on the Las Vegas Strip"`
-
----
-
-## Scrape Process, Step-by-Step
-
-1. GitHub Actions runner picks up the job every ~10 minutes, depending on
-   traffic.
-2. The runner checks out the repository, installs [Deno][deno], and executes the
-   command `deno task scrape`, which in turn invokes the [`main.ts`][main.ts]
-   file in the project root.
-3. [`main.ts`][main.ts] imports `scrape` and double-checks that it is being run
-   as the main module (and not imported by another). If so, it immediately calls
-   the `scrape()` function, defined in [`src/scrape.ts`][src-scrape.ts] as
-   follows:
-4. An asynchronous function that contains two inner functions, `read` and
-   `write`. The following steps are taken when `scrape` is called:
-   1. `read()` is called with `IMAGE_URL` from
-      [`src/constants.ts`][src-constants.ts].
-      1. Internally, the Fetch API is used to scrape the image from the source
-         URL.
-      2. If the request fails, it will be retried up to the number of times
-         defined by the `ATTEMPTS` constant, with delays between each attempt.
-      3. If all attempts are exhausted without success, it **terminates
-         immediately**.
-      4. If it succeeds, returns a new [`Image`][src-image.ts] instance.
-   2. `write()` is called with the Image instance as its only argument.
-      1. The image is compared for equality against the latest image, using a
-         timing-safe equality check to avoid exposing ourselves to timing-based
-         attacks.
-         - If they are equal, it means the image has not yet been updated at the
-           origin. The scrape will start over from step 4.1, and repeat the
-           process until either a new image is found, or the maximum number of
-           `ATTEMPTS` is exhausted.
-         - If a new image is not discoverd, the job will **immediately
-           terminate**.
-      2. If we've made it this far, we have a fresh image and we need to store
-         it. It is first written to the `Deno KV` database by
-         [`Image.write()`][src-image.ts].
-      3. The image is written to a file by [`Image.writeFile()`][src-image.ts]
-         with our [naming conventions](#assets-and-data), and logged to
-         `stdout`.
-      4. The image is written to [`./assets/latest.jpg`] as well, and the size
-         difference is logged to `stdout` and GitHub Actions Outputs.
-      5. The [`setOutput`][src-helpers-actions.ts] method is called with all of
-         the metadata for the image, so the runner can process it further.
-   3. The scrape is now complete and the runner proceeds to the next step.
-5. The photo is stored as a GitHub Workflow artifact for **90 days**.
-6. The changes are committed and pushed to the repository.
-7. The job completes and the runner is terminated.
 
 ---
 
@@ -318,6 +269,7 @@ commercial interests.</small>
 
 <!-- Third Party Links -->
 
+[Fetch API]: https://mdn.io/Fetch%20API
 [GitHub Actions]: https://github.com/features/actions "GitHub Actions Official Landing Page"
 [sdxl]: https://github.com/Stability-AI/stablediffusion "Stable Diffusion XL 1.0"
 [ffmpeg]: https://ffmpeg.org "The FFmpeg Project Official Website"
