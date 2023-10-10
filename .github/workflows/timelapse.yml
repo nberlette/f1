@@ -153,15 +153,15 @@ jobs:
             VIDEO_TIMEFRAME="${INPUT_TIMEFRAME:-1}"
           fi
 
-          if (( VIDEO_TIMEFRAME > ${#all_dates[@]} )); then
+          if ((VIDEO_TIMEFRAME > ${#all_dates[@]})); then
             VIDEO_TIMEFRAME=${#all_dates[@]}
-          elif (( VIDEO_TIMEFRAME > 60 )); then
+          elif ((VIDEO_TIMEFRAME > 60)); then
             VIDEO_TIMEFRAME=60
           fi
 
           if [ -z "${VIDEO_START_DATE:-}" ]; then
             # If a start date is not provided, take the latest date
-            start_date="${all_dates[$(( -1 - VIDEO_TIMEFRAME ))]}"
+            start_date="${all_dates[$((-1 - VIDEO_TIMEFRAME))]}"
             end_date="${all_dates[-1]}"
           else
             start_date="${VIDEO_START_DATE-}"
@@ -172,7 +172,7 @@ jobs:
             # (index -1), then just use ${all_dates[-1]} as the start date.
             if [[ "$end_date" > "${all_dates[-1]}" ]]; then
               end_date="${all_dates[-1]}"
-              start_date="$(date -j -v-${timeframe}d -f "%Y-%m-%d" "$end_date" +%Y-%m-%d)
+              start_date="$(date -j -v-${timeframe}d -f "%Y-%m-%d" "$end_date" +%Y-%m-%d)"
             fi
 
             # if the start_date is earlier than the earliest date in the
@@ -188,10 +188,10 @@ jobs:
             date_range="$start_date - $end_date"
           fi
 
-          echo "timeframe='$VIDEO_TIMEFRAME'" >> $GITHUB_OUTPUT
-          echo "start_date='$start_date'" >> $GITHUB_OUTPUT
-          echo "end_date='$end_date'" >> $GITHUB_OUTPUT
-          echo "date_range='$date_range'" >> $GITHUB_OUTPUT
+          echo "timeframe='$VIDEO_TIMEFRAME'" >>$GITHUB_OUTPUT
+          echo "start_date='$start_date'" >>$GITHUB_OUTPUT
+          echo "end_date='$end_date'" >>$GITHUB_OUTPUT
+          echo "date_range='$date_range'" >>$GITHUB_OUTPUT
 
           dates=()
           files=()
@@ -211,15 +211,15 @@ jobs:
           dates_str="$(printf '%s\n' "${dates[@]}" | jq -R . | jq --indent 0 -s .)"
           files_str="$(printf '%s\n' "${files[@]}" | jq -R . | jq --indent 0 -s .)"
 
-          echo "all_dates='${all_dates_str-}'" >> $GITHUB_OUTPUT
-          echo "dates='${dates_str-}'" >> $GITHUB_OUTPUT
-          echo "files='${files_str-}'" >> $GITHUB_OUTPUT
+          echo "all_dates='${all_dates_str-}'" >>$GITHUB_OUTPUT
+          echo "dates='${dates_str-}'" >>$GITHUB_OUTPUT
+          echo "files='${files_str-}'" >>$GITHUB_OUTPUT
 
-          echo "is_scheduled='$IS_SCHEDULED'" >> $GITHUB_OUTPUT
-          echo "is_workflow_dispatch='$IS_WORKFLOW_DISPATCH'" >> $GITHUB_OUTPUT
-          echo "is_workflow_call='$IS_WORKFLOW_CALL'" >> $GITHUB_OUTPUT
-          echo "is_scheduled_daily='$IS_SCHEDULED_DAILY'" >> $GITHUB_OUTPUT
-          echo "is_scheduled_weekly='$IS_SCHEDULED_WEEKLY'" >> $GITHUB_OUTPUT
+          echo "is_scheduled='$IS_SCHEDULED'" >>$GITHUB_OUTPUT
+          echo "is_workflow_dispatch='$IS_WORKFLOW_DISPATCH'" >>$GITHUB_OUTPUT
+          echo "is_workflow_call='$IS_WORKFLOW_CALL'" >>$GITHUB_OUTPUT
+          echo "is_scheduled_daily='$IS_SCHEDULED_DAILY'" >>$GITHUB_OUTPUT
+          echo "is_scheduled_weekly='$IS_SCHEDULED_WEEKLY'" >>$GITHUB_OUTPUT
 
   generate_video:
     name: "Generate Timelapse Video"
@@ -252,8 +252,6 @@ jobs:
           VIDEO_PRESET: ${{ inputs.video_preset }}
           VIDEO_MOVFLAGS: ${{ inputs.video_movflags }}
         run: |
-          #!/bin/bash
-
           # Create a temp directory for the input files
           TIMELAPSE_DIR="$(mktemp -d -t timelapse-XXXXXXXXXX)"
           for date in "${VIDEO_DATES[@]}"; do
@@ -291,11 +289,11 @@ jobs:
             OUTPUT_PATH="assets/timelapse/$(date +%s)_$VIDEO_FILENAME"
           fi
 
-          echo "path=$OUTPUT_PATH" >> $GITHUB_OUTPUT
-          echo "VIDEO_TITLE=$VIDEO_TITLE" >> $GITHUB_ENV
-          echo "VIDEO_DESCRIPTION=$VIDEO_DESCRIPTION" >> $GITHUB_ENV
-          echo "VIDEO_FILENAME=$VIDEO_FILENAME" >> $GITHUB_ENV
-          echo "OUTPUT_PATH=$OUTPUT_PATH" >> $GITHUB_ENV
+          echo "path=$OUTPUT_PATH" >>$GITHUB_OUTPUT
+          echo "VIDEO_TITLE=$VIDEO_TITLE" >>$GITHUB_ENV
+          echo "VIDEO_DESCRIPTION=$VIDEO_DESCRIPTION" >>$GITHUB_ENV
+          echo "VIDEO_FILENAME=$VIDEO_FILENAME" >>$GITHUB_ENV
+          echo "OUTPUT_PATH=$OUTPUT_PATH" >>$GITHUB_ENV
 
           # Generate the timelapse
           ffmpeg \
