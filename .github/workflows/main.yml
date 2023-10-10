@@ -1,7 +1,7 @@
 name: Scrape
 on:
   schedule:
-    - cron: "*/12 * * * *"
+    - cron: "*/11 * * * *"
   workflow_dispatch:
 jobs:
   scrape:
@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest]
+        os: [ubuntu-latest]
         deno-version: [v1.x]
     outputs:
       time: ${{ steps.scrape.outputs.time }}
@@ -31,7 +31,8 @@ jobs:
           # sparse-checkout: .
           ref: main
 
-      - uses: denoland/setup-deno@v1
+      - name: "(run) setup deno"
+        uses: denoland/setup-deno@v1
         with:
           deno-version: ${{ matrix.deno-version }}
           
@@ -80,10 +81,10 @@ jobs:
           )"
           git add ./assets && git commit -m "${message}" && git push
 
-      - if: ${{ success() }}
+      - if: success()
         name: "(run) upload artifacts"
         uses: actions/upload-artifact@v3
         with:
           path: ${{ steps.scrape.outputs.path }}
-          name: ${{ steps.scrape.outputs.hash }}
+          name: ${{ steps.scrape.outputs.time }}
 
