@@ -142,7 +142,6 @@ jobs:
           all_dates=($(cd assets && env ls -t1 --time=ctime -I "*.jpg"))
 
           VIDEO_TIMEFRAME=1
-
           if [[ "$IS_SCHEDULED" == "true" ]]; then
             if [[ "$IS_SCHEDULED_DAILY" == "true" ]]; then
               VIDEO_TIMEFRAME=1
@@ -153,10 +152,12 @@ jobs:
             VIDEO_TIMEFRAME="${INPUT_TIMEFRAME:-1}"
           fi
 
-          if ((VIDEO_TIMEFRAME > ${#all_dates[@]})); then
-            VIDEO_TIMEFRAME=${#all_dates[@]}
-          elif ((VIDEO_TIMEFRAME > 60)); then
-            VIDEO_TIMEFRAME=60
+          TOTAL_DATES="${#all_dates[@]}"
+          MAX_TIMEFRAME=60
+          if ((VIDEO_TIMEFRAME > TOTAL_DATES)); then
+            VIDEO_TIMEFRAME="$TOTAL_DATES"
+          elif ((VIDEO_TIMEFRAME > MAX_TIMEFRAME)); then
+            VIDEO_TIMEFRAME="$MAX_TIMEFRAME"
           fi
 
           if [ -z "${VIDEO_START_DATE:-}" ]; then
@@ -188,15 +189,15 @@ jobs:
             date_range="$start_date - $end_date"
           fi
 
-          echo "timeframe='$VIDEO_TIMEFRAME'" >>$GITHUB_OUTPUT
-          echo "start_date='$start_date'" >>$GITHUB_OUTPUT
-          echo "end_date='$end_date'" >>$GITHUB_OUTPUT
-          echo "date_range='$date_range'" >>$GITHUB_OUTPUT
+          echo "timeframe=$VIDEO_TIMEFRAME" >>$GITHUB_OUTPUT
+          echo "start_date=$start_date" >>$GITHUB_OUTPUT
+          echo "end_date=$end_date" >>$GITHUB_OUTPUT
+          echo "date_range=$date_range" >>$GITHUB_OUTPUT
 
           dates=()
           files=()
 
-          for date in "${all_dates[@]}"; do
+          for date in $(jq -r '.[]' <<<"${all_dates[@]}"); do
             if [[ "$date" > "$start_date" || "$date" == "$start_date" ]]; then
               if [[ "$date" < "$end_date" || "$date" == "$end_date" ]]; then
                 dates+=("$date")
@@ -211,15 +212,15 @@ jobs:
           dates_str="$(printf '%s\n' "${dates[@]}" | jq -R . | jq --indent 0 -s .)"
           files_str="$(printf '%s\n' "${files[@]}" | jq -R . | jq --indent 0 -s .)"
 
-          echo "all_dates='${all_dates_str-}'" >>$GITHUB_OUTPUT
-          echo "dates='${dates_str-}'" >>$GITHUB_OUTPUT
-          echo "files='${files_str-}'" >>$GITHUB_OUTPUT
+          echo "all_dates=${all_dates_str-}" >>$GITHUB_OUTPUT
+          echo "dates=${dates_str-}" >>$GITHUB_OUTPUT
+          echo "files=${files_str-}" >>$GITHUB_OUTPUT
 
-          echo "is_scheduled='$IS_SCHEDULED'" >>$GITHUB_OUTPUT
-          echo "is_workflow_dispatch='$IS_WORKFLOW_DISPATCH'" >>$GITHUB_OUTPUT
-          echo "is_workflow_call='$IS_WORKFLOW_CALL'" >>$GITHUB_OUTPUT
-          echo "is_scheduled_daily='$IS_SCHEDULED_DAILY'" >>$GITHUB_OUTPUT
-          echo "is_scheduled_weekly='$IS_SCHEDULED_WEEKLY'" >>$GITHUB_OUTPUT
+          echo "is_scheduled=$IS_SCHEDULED" >>$GITHUB_OUTPUT
+          echo "is_workflow_dispatch=$IS_WORKFLOW_DISPATCH" >>$GITHUB_OUTPUT
+          echo "is_workflow_call=$IS_WORKFLOW_CALL" >>$GITHUB_OUTPUT
+          echo "is_scheduled_daily=$IS_SCHEDULED_DAILY" >>$GITHUB_OUTPUT
+          echo "is_scheduled_weekly=$IS_SCHEDULED_WEEKLY" >>$GITHUB_OUTPUT
 
   generate_video:
     name: "Generate Timelapse Video"
