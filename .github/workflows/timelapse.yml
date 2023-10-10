@@ -6,133 +6,268 @@ on:
   workflow_dispatch:
     inputs:
       timeframe:
-        type: choice
-        options:
-          - daily
-          - weekly
+        type: number
+        description: |
+          Time range (in days) to generate the timelapse video for. Value must
+          be between no less than 1.
         required: true
-        description: "Choose the timeframe to generate a timelapse for: either the last 24 hours, or the last 7 days."
+        default: 1
+      start_date:
+        type: string
+        description: |
+          Provide a custom start date for the generated timelapse video. The
+          format should be 'YYYY-MM-DD'. The 'end_date' will be calculated
+          using the 'timeframe' input value. Defaul
+        required: false
+      video_title:
+        type: string
+        description: |
+          Provide a custom title for the generated video. Supports several
+          different placeholders for dynamic values:
+            '{date_start}', '{date_end}', '{days_total}', '{date_range}'
+          > **Note**: date_range is equivalent to '{date_start} - {date_end}',
+          unless the start and end dates are the same, in which case it just
+          evaluates to '{date_start}'.
+        default: "Timelapse for {date_range}"
+        required: false
+      video_description:
+        type: string
+        description: |
+          Provide a custom description for the generated video. The same
+          placeholder rules apply as with titles.
+        default: "Timelapse video for {date_range}"
+        required: false
+      video_filename:
+        type: string
+        description: |
+          Provide a custom filename for the generated video. The extension
+          should be '.mp4'. The same placeholder rules apply here as they do in
+          the title and description inputs.
+        default: "timelapse_{date_range}.mp4"
+        required: false
+      video_width:
+        type: number
+        description: |
+          Provide a custom width for the generated video. The height will be
+          calculated automatically based on the aspect ratio of the images.
+          The default value is 1920.
+        default: "1920"
+        required: false
+      video_fps:
+        type: number
+        description: "Provide a custom framerate for the generated video."
+        default: "15"
+        required: false
+      video_crf:
+        type: number
+        description: |
+          Provide a custom CRF value for the generated video. The default value
+          is 17.
+        default: "17"
+        required: false
+      video_preset:
+        type: string
+        description: |
+          Provide a custom preset for the generated video. The default value is
+          'slow'.
+        default: "slow"
+        required: false
+      video_tune:
+        type: string
+        description: |
+          Provide a custom tune for the generated video. The default value is
+          'film'.
+        default: "film"
+        required: false
+      video_movflags:
+        type: string
+        description: |
+          Provide custom movflags for the generated video. The default value is
+          '+faststart'.
+        default: "+faststart"
+        required: false
 jobs:
+  cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global fetch.parallel 32
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache Assets Directory
+        id: cache-hit
+        uses: actions/cache@v2
+        with:
+          path: assets
+          key: ${{ runner.os }}-assets-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-assets-${{ github.sha }}
+            ${{ runner.os }}-assets-
+
   metadata:
-    runs-on: macos-latest
+    needs: cache
+    runs-on: ubuntu-latest
     outputs:
-      daily_files: ${{ steps.daily.outputs.files }}
-      daily_dates: ${{ steps.daily.outputs.dates }}
-      weekly_files: ${{ steps.weekly.outputs.files }}
-      weekly_dates: ${{ steps.weekly.outputs.dates }}
+      files: ${{ steps.collect.outputs.files }}
+      dates: ${{ steps.collect.outputs.dates }}
+      all_dates: ${{ steps.collect.outputs.all_dates }}
+
     steps:
-      - id: daily
-        name: "(setup) collect daily items"
-        run: |
-          dates=($(cd assets && \ls --color=never -t1 --time=ctime -I "*.jpg")
-          
-          today="${dates[-1]}"
-          echo "dates=[\"${today}\"]" >> "$GITHUB_OUTPUT"
-
-          items=($(find "./assets/${today-}" -type f -name "*.jpg"))
-          files="[$(printf '"%s",' "${items[@]}" | sed 's/,$//')]"
-          echo "files=${files}" >> "$GITHUB_OUTPUT"
-      - id: weekly
-        name: "(setup) collect weekly items"
-        run: |
-          dates=($(cd assets && \ls --color=never -t1 --time=ctime -I "*.jpg")
-          
-          # collect the dates for the last 7 days, output to github output
-          dates=("${dates[@]: -7}")
-          week="[$(printf '"%s",' "${dates[@]}" | sed 's/,$//')]"
-          echo "dates=${week}" >> "$GITHUB_OUTPUT"
-
-          # collect the files for the last 7 days, output to github output
-          items=($(find "./assets/${dates[@]}" -type f -name "*.jpg"))
-          files="[$(printf '"%s",' "${items[@]}" | sed 's/,$//')]"
-          echo "files=${files}" >> "$GITHUB_OUTPUT"
-
-  daily:
-    if: ${{(github.event_name=='schedule'&&github.event.schedule=='45 6 * * *')||(github.event_name=='workflow_dispatch'&&github.event.inputs.timeframe=='daily')}}
-    name: "Generate Timelapse: Today's Images"
-    runs-on: macos-latest
-    steps:
-      - name: "(setup) checkout repository"
-        uses: actions/checkout@v3
+      - name: Restore Cache
+        uses: actions/cache@v3
         with:
-          fetch-depth: 1
+          path: assets
+          key: ${{ runner.os }}-assets-${{ github.sha }}
 
-      - name: "(setup) install ffmpeg"
+      - id: collect
+        name: "(setup) collect items"
+        env:
+          VIDEO_TIMEFRAME: ${{ fromJson(inputs.timeframe) }}
+          VIDEO_START_DATE: ${{ inputs.start_date }}
+        run: |
+          #!/bin/bash
+
+          if [ -z "$VIDEO_START_DATE" ]; then
+            # If a start date is not provided, take the latest date
+            start_date="${all_dates[0]}"
+          else
+            start_date="$VIDEO_START_DATE"
+          fi
+
+          end_date=$(date -d "$start_date + $VIDEO_TIMEFRAME days" +"%Y-%m-%d")
+          all_dates=($(cd assets && env ls -t1 --time=ctime -I "*.jpg") | uniq)
+
+          dates=()
+          files=()
+
+          for date in "${all_dates[@]}"; do
+            if [[ "$date" > "$start_date" && "$date" <= "$end_date" ]]; then
+              dates+=("$date")
+              files_in_date=($(ls assets/$date/*.jpg))
+              files=("${files[@]}" "${files_in_date[@]}")
+            fi
+          done
+
+          all_dates_str="$(printf '%s\n' "${all_dates[@]}" | jq -R . | jq -s .)"
+          echo "all_dates=$all_dates_str" >> $GITHUB_OUTPUT
+
+          dates_str="$(printf '%s\n' "${dates[@]}" | jq -R . | jq -s .)"
+          echo "dates=$dates_str" >> $GITHUB_OUTPUT
+
+          files_str="$(printf '%s\n' "${files[@]}" | jq -R . | jq -s .)"
+          echo "files=$files_str" >> $GITHUB_OUTPUT
+
+  generate_video:
+    needs: metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: install ffmpeg
         run: brew install ffmpeg
 
-      - name: "(generate) daily timelapse video"
+      - name: Generate Timelapse
         env:
-          FILES: ${{ steps.metadata.outputs.daily_files }}
-          DATES: ${{ steps.metadata.outputs.daily_dates }}
+          VIDEO_FILES: ${{ needs.metadata.outputs.files }}
+          VIDEO_TITLE: ${{ inputs.video_title }}
+          VIDEO_DESCRIPTION: ${{ inputs.video_description }}
+          VIDEO_FILENAME: ${{ inputs.video_filename }}
+          VIDEO_WIDTH: ${{ inputs.video_width }}
+          VIDEO_FPS: ${{ inputs.video_fps }}
+          VIDEO_CRF: ${{ inputs.video_crf }}
+          VIDEO_PRESET: ${{ inputs.video_preset }}
+          VIDEO_TUNE: ${{ inputs.video_tune }}
+          VIDEO_MOVFLAGS: ${{ inputs.video_movflags }}
         run: |
-          files=$(jq -r '.[]' <<< "${FILES}")
-          dates=$(jq -r '.[0]' <<< "${DATES}")
-          TIMELAPSE_PATH="daily_timelapse_${dates}.mp4"
-          echo "TIMELAPSE_PATH=${TIMELAPSE_PATH-}" >> $GITHUB_ENV
+          #!/bin/bash
+
+          ALL_DATES=(${{ fromJson(needs.metadata.outputs.all_dates) }})
+          VIDEO_DATES=( ${{ fromJson(needs.metadata.outputs.dates) }})
+          VIDEO_FILES=(${{ fromJson(needs.metadata.outputs.files) }})
+
+          # Create a temp directory for the input files
+          TIMELAPSE_DIR="$(mktemp -d -t timelapse-XXXXXXXXXX)"
+          for date in "${VIDEO_DATES[@]}"; do
+            mkdir -p "$TIMELAPSE_DIR/$date"
+            cp -r "assets/$date" "$TIMELAPSE_DIR"
+          done
+
+          # Resolve placeholders for title, description, and filename
+          dates=($VIDEO_FILES)
+          start_date="${dates[0]}"
+          end_date="${dates[-1]}"
+          date_range=$start_date
+
+          if [ "$start_date" != "$end_date" ]; then
+            date_range="$start_date - $end_date"
+          fi
+
+          declare -A placeholders
+          placeholders=(
+            ["{date_start}"]=$start_date
+            ["{date_end}"]=$end_date
+            ["{date_range}"]=$date_range
+          )
+
+          for key in "${!placeholders[@]}"; do
+            VIDEO_TITLE=${VIDEO_TITLE//$key/${placeholders[$key]}}
+            VIDEO_DESCRIPTION=${VIDEO_DESCRIPTION//$key/${placeholders[$key]}}
+            VIDEO_FILENAME=${VIDEO_FILENAME//$key/${placeholders[$key]}}
+          done
+
+          OUTPUT_PATH="assets/timelapse/$VIDEO_FILENAME"
+          if [ -f "$OUTPUT_PATH" ]; then
+            # If the file already exists, append a timestamp to the filename
+            OUTPUT_PATH="assets/timelapse/$(date +%s)_$VIDEO_FILENAME"
+          fi
+
+          echo "path=$OUTPUT_PATH" >> $GITHUB_OUTPUT
+          echo "VIDEO_TITLE=$VIDEO_TITLE" >> $GITHUB_ENV
+          echo "VIDEO_DESCRIPTION=$VIDEO_DESCRIPTION" >> $GITHUB_ENV
+          echo "VIDEO_FILENAME=$VIDEO_FILENAME" >> $GITHUB_ENV
+          echo "OUTPUT_PATH=$OUTPUT_PATH" >> $GITHUB_ENV
+
+          # Generate the timelapse
           ffmpeg \
-            -r 30 \
-            -i "${files[@]-}" \
-            -s 1920x1080 \
-            -vcodec libx264 \
-            -crf 17 \
-            -pix_fmt yuv420p \
-            -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
-            -an \
-            -preset slow \ 
-            -tune film \
-            -movflags +faststart \
-            -metadata title="Timelapse: $dates" \
-            -metadata year="${dates:0:4}" \
-            -metadata description="Timelapse video for $dates" \
-            "${TIMELAPSE_PATH-}"
+            -framerate $VIDEO_FPS \
+            -pattern_type glob \
+            -i "$TIMELAPSE_DIR/*/*.jpg" \
+            -s:v $VIDEO_WIDTH \
+            -c:v libx264 \
+            -crf $VIDEO_CRF \
+            -preset $VIDEO_PRESET \
+            -tune $VIDEO_TUNE \
+            -movflags $VIDEO_MOVFLAGS \
+            -metadata title="$VIDEO_TITLE" \
+            -metadata description="$VIDEO_DESCRIPTION" \
+            -metadata year="$(date +%Y)" \
+            -metadata date="$(date +%Y-%m-%d)" \
+            -metadata comment="Generated by github.com/nberlette/f1" \
+            -y "$OUTPUT_PATH"
 
-      - name: Upload Daily Timelapse
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ env.TIMELAPSE_PATH }}
-          path: ${{ env.TIMELAPSE_PATH }}
+          # Cleanup
+          rm -rf "$TIMELAPSE_DIR"]
 
-  weekly:
-    if: ${{(github.event_name=='schedule'&&github.event.schedule=='30 6 * * SUN')||(github.event_name=='workflow_dispatch'&&github.event.inputs.timeframe=='weekly')}}
-    name: "Generate Weekly Timelapse"
-    runs-on: macos-latest
-    steps:
-      - name: "(setup) checkout repository"
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
-
-      - name: "(setup) install ffmpeg"
-        run: brew install ffmpeg
-
-      - name: "(generate) weekly timelapse video"
+      - name: Commit and Push
         env:
-          FILES: ${{ steps.metadata.outputs.weekly_files }}
-          DATES: ${{ steps.metadata.outputs.weekly_dates }}
+          OUTPUT_PATH: ${{ env.OUTPUT_PATH }}
+          VIDEO_TITLE: ${{ env.VIDEO_TITLE }}
         run: |
-          files=$(jq -r '.[]' <<< "${FILES}")
-          dates=$(jq -r '.[]' <<< "${DATES}")
-          TIMELAPSE_PATH="weekly_timelapse_${dates[0]}.mp4"
-          echo "TIMELAPSE_PATH=${TIMELAPSE_PATH-}" >> $GITHUB_ENV
-          ffmpeg \
-            -r 30 \
-            -i "${files[@]-}" \
-            -s 1920x1080 \
-            -vcodec libx264 \
-            -crf 17 \
-            -pix_fmt yuv420p \
-            -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
-            -an \
-            -preset slow \ 
-            -tune film \
-            -movflags +faststart \
-            -metadata title="Timelapse: ${dates[0]} - ${dates[-1]}" \
-            -metadata year="${dates:0:4}" \
-            -metadata description="Timelapse video for the week of ${dates[0]}" \
-            "${TIMELAPSE_PATH-}"
+          # Upload the timelapse to the repository
+          git add "$OUTPUT_PATH"
+          git commit -m "🎬 new timelapse: '$VIDEO_TITLE'"
+          git push
 
-      - name: Upload Weekly Timelapse
-        uses: actions/upload-artifact@v2
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        env:
+          OUTPUT_PATH: ${{ env.OUTPUT_PATH }}
+          VIDEO_FILENAME: ${{ env.VIDEO_FILENAME }}
         with:
-          name: ${{ env.TIMELAPSE_PATH }}
-          path: ${{ env.TIMELAPSE_PATH }}
+          path: ${{ env.OUTPUT_PATH }}
+          name: ${{ env.VIDEO_FILENAME }}
