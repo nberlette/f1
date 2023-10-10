@@ -1,8 +1,10 @@
 name: Timelapse
+run-name: "Generate Timelapse for ${{ inputs.start_date }} (${{ inputs.timeframe }} days)"
 on:
   schedule:
     - cron: "45 6 * * *"
     - cron: "30 6 * * SUN"
+  workflow_call:
   workflow_dispatch:
     inputs:
       timeframe:
@@ -16,19 +18,15 @@ on:
         type: string
         description: |
           Provide a custom start date for the generated timelapse video. The
-          format should be 'YYYY-MM-DD'. The 'end_date' will be calculated
-          using the 'timeframe' input value. If no start date is provided, the
-          latest date will be used..
+          format should be 'YYYY-MM-DD'. If no start date is provided, it will
+          be calculated using the 'timeframe' subtracted from the latest date.
         required: false
       video_title:
         type: string
         description: |
           Provide a custom title for the generated video. Supports several
           different placeholders for dynamic values:
-            '{date_start}', '{date_end}', '{days_total}', '{date_range}'
-          > **Note**: date_range is equivalent to '{date_start} - {date_end}',
-          unless the start and end dates are the same, in which case it just
-          evaluates to '{date_start}'.
+            '{start_date}', '{end_date}', '{timeframe}', '{date_range}'
         default: "Timelapse for {date_range}"
         required: false
       video_description:
@@ -82,6 +80,7 @@ on:
         required: false
 jobs:
   cache:
+    name: "Cache Assets"
     runs-on: ubuntu-latest
     steps:
       - name: Configure Git
@@ -106,13 +105,22 @@ jobs:
             ${{ runner.os }}-assets-
 
   metadata:
+    name: "Collect Metadata and Files"
     needs: cache
     runs-on: ubuntu-latest
     outputs:
       files: ${{ steps.collect.outputs.files }}
       dates: ${{ steps.collect.outputs.dates }}
       all_dates: ${{ steps.collect.outputs.all_dates }}
-
+      timeframe: ${{ steps.collect.outputs.timeframe }}
+      start_date: ${{ steps.collect.outputs.start_date }}
+      end_date: ${{ steps.collect.outputs.end_date }}
+      date_range: ${{ steps.collect.outputs.date_range }}
+      is_scheduled: ${{ steps.collect.outputs.is_scheduled }}
+      is_workflow_dispatch: ${{ steps.collect.outputs.is_workflow_dispatch }}
+      is_workflow_call: ${{ steps.collect.outputs.is_workflow_call }}
+      is_scheduled_daily: ${{ steps.collect.outputs.is_scheduled_daily }}
+      is_scheduled_weekly: ${{ steps.collect.outputs.is_scheduled_weekly }}
     steps:
       - name: Restore Cache
         uses: actions/cache@v3
@@ -123,48 +131,98 @@ jobs:
       - id: collect
         name: "(setup) collect items"
         env:
-          VIDEO_TIMEFRAME: ${{ fromJson(inputs.timeframe) }}
-          VIDEO_START_DATE: ${{ inputs.start_date }}
+          IS_SCHEDULED: ${{ ((github.event_name == 'schedule' && 'true') || 'false') }}
+          IS_WORKFLOW_DISPATCH: ${{ ((github.event_name == 'workflow_dispatch' && 'true') || 'false') }}
+          IS_SCHEDULED_DAILY: ${{ ((github.event_name == 'schedule' && github.event.schedule == '45 6 * * *' && 'true') || 'false') }}
+          IS_SCHEDULED_WEEKLY: ${{ ((github.event_name == 'schedule' && github.event.schedule == '30 6 * * SUN' && 'true') || 'false') }}
+          IS_WORKFLOW_CALL: ${{ ((github.event_name == 'workflow_call' && 'true') || 'false') }}
+          INPUT_TIMEFRAME: ${{ fromJson(inputs.timeframe || '1') }}
+          VIDEO_START_DATE: ${{ (inputs.start_date || '') }}
         run: |
-          #!/bin/bash
+          all_dates=($(cd assets && env ls -t1 --time=ctime -I "*.jpg"))
 
-          if [ -z "$VIDEO_START_DATE" ]; then
-            # If a start date is not provided, take the latest date
-            start_date="${all_dates[0]}"
+          VIDEO_TIMEFRAME=1
+
+          if [[ "$IS_SCHEDULED" == "true" ]]; then
+            if [[ "$IS_SCHEDULED_DAILY" == "true" ]]; then
+              VIDEO_TIMEFRAME=1
+            elif [[ "$IS_SCHEDULED_WEEKLY" == "true" ]]; then
+              VIDEO_TIMEFRAME=7
+            fi
           else
-            start_date="$VIDEO_START_DATE"
+            VIDEO_TIMEFRAME="${INPUT_TIMEFRAME:-1}"
           fi
 
-          end_date=$(date -d "$start_date + $VIDEO_TIMEFRAME days" +"%Y-%m-%d")
-          all_dates=($(cd assets && env ls -t1 --time=ctime -I "*.jpg"))
+          if (( VIDEO_TIMEFRAME > ${#all_dates[@]} )); then
+            VIDEO_TIMEFRAME=${#all_dates[@]}
+          elif (( VIDEO_TIMEFRAME > 60 )); then
+            VIDEO_TIMEFRAME=60
+          fi
+
+          if [ -z "${VIDEO_START_DATE:-}" ]; then
+            # If a start date is not provided, take the latest date
+            start_date="${all_dates[$(( -1 - VIDEO_TIMEFRAME ))]}"
+            end_date="${all_dates[-1]}"
+          else
+            start_date="${VIDEO_START_DATE-}"
+            timeframe="${VIDEO_TIMEFRAME-}"
+            end_date="$(date -j -v+${timeframe}d -f "%Y-%m-%d" "$start_date" +%Y-%m-%d)"
+
+            # if the start_date is later than the latest date in the array
+            # (index -1), then just use ${all_dates[-1]} as the start date.
+            if [[ "$end_date" > "${all_dates[-1]}" ]]; then
+              end_date="${all_dates[-1]}"
+              start_date="$(date -j -v-${timeframe}d -f "%Y-%m-%d" "$end_date" +%Y-%m-%d)
+            fi
+
+            # if the start_date is earlier than the earliest date in the
+            # array (index 0), then just use ${all_dates[0]} as the start date.
+            if [[ "$start_date" < "${all_dates[0]}" ]]; then
+              start_date="${all_dates[0]}"
+              end_date="$(date -j -v+${timeframe}d -f "%Y-%m-%d" "$start_date" +%Y-%m-%d)"
+            fi
+          fi
+
+          date_range="$start_date"
+          if [ "$start_date" != "$end_date" ]; then
+            date_range="$start_date - $end_date"
+          fi
+
+          echo "timeframe='$VIDEO_TIMEFRAME'" >> $GITHUB_OUTPUT
+          echo "start_date='$start_date'" >> $GITHUB_OUTPUT
+          echo "end_date='$end_date'" >> $GITHUB_OUTPUT
+          echo "date_range='$date_range'" >> $GITHUB_OUTPUT
 
           dates=()
           files=()
 
           for date in "${all_dates[@]}"; do
-            # if [[ "$date" > "$start_date" && "$date" < "$end_date" ]]; then
-            # we cannot compare dates with the > and < operators (like above), so we
-            # need to convert them to seconds since epoch first
-            date_sec=$(date -d "$date" +%s)
-            start_date_sec=$(date -d "$start_date" +%s)
-            end_date_sec=$(date -d "$end_date" +%s)
-            if (( date_sec >= start_date_sec && date_sec <= end_date_sec )); then
-              dates+=("$date")
-              files_in_date=($(ls assets/$date/*.jpg))
-              files=("${files[@]}" "${files_in_date[@]}")
+            if [[ "$date" > "$start_date" || "$date" == "$start_date" ]]; then
+              if [[ "$date" < "$end_date" || "$date" == "$end_date" ]]; then
+                dates+=("$date")
+                files_in_date=($(ls assets/$date/*.jpg))
+                files=("${files[@]}" "${files_in_date[@]}")
+              fi
             fi
           done
 
-          all_dates_str="$(printf '%s\n' "${all_dates[@]}" | jq -R . | jq -s .)"
-          echo "all_dates=$all_dates_str" >> $GITHUB_OUTPUT
+          # stringify the arrays to json
+          all_dates_str="$(printf '%s\n' "${all_dates[@]}" | jq -R . | jq --indent 0 -s .)"
+          dates_str="$(printf '%s\n' "${dates[@]}" | jq -R . | jq --indent 0 -s .)"
+          files_str="$(printf '%s\n' "${files[@]}" | jq -R . | jq --indent 0 -s .)"
 
-          dates_str="$(printf '%s\n' "${dates[@]}" | jq -R . | jq -s .)"
-          echo "dates=$dates_str" >> $GITHUB_OUTPUT
+          echo "all_dates='${all_dates_str-}'" >> $GITHUB_OUTPUT
+          echo "dates='${dates_str-}'" >> $GITHUB_OUTPUT
+          echo "files='${files_str-}'" >> $GITHUB_OUTPUT
 
-          files_str="$(printf '%s\n' "${files[@]}" | jq -R . | jq -s .)"
-          echo "files=$files_str" >> $GITHUB_OUTPUT
+          echo "is_scheduled='$IS_SCHEDULED'" >> $GITHUB_OUTPUT
+          echo "is_workflow_dispatch='$IS_WORKFLOW_DISPATCH'" >> $GITHUB_OUTPUT
+          echo "is_workflow_call='$IS_WORKFLOW_CALL'" >> $GITHUB_OUTPUT
+          echo "is_scheduled_daily='$IS_SCHEDULED_DAILY'" >> $GITHUB_OUTPUT
+          echo "is_scheduled_weekly='$IS_SCHEDULED_WEEKLY'" >> $GITHUB_OUTPUT
 
   generate_video:
+    name: "Generate Timelapse Video"
     needs: metadata
     runs-on: ubuntu-latest
     steps:
@@ -174,6 +232,17 @@ jobs:
       - name: Generate Timelapse
         env:
           VIDEO_FILES: ${{ needs.metadata.outputs.files }}
+          VIDEO_DATES: ${{ needs.metadata.outputs.dates }}
+          VIDEO_TIMEFRAME: ${{ needs.metadata.outputs.timeframe }}
+          VIDEO_ALL_DATES: ${{ fromJson(needs.metadata.outputs.all_dates) }}
+          VIDEO_START_DATE: ${{ needs.metadata.outputs.start_date }}
+          VIDEO_END_DATE: ${{ needs.metadata.outputs.end_date }}
+          VIDEO_DATE_RANGE: ${{ needs.metadata.outputs.date_range }}
+          VIDEO_IS_SCHEDULED: ${{ fromJson(needs.metadata.outputs.is_scheduled) }}
+          VIDEO_IS_WORKFLOW_DISPATCH: ${{ fromJson(needs.metadata.outputs.is_workflow_dispatch) }}
+          VIDEO_IS_WORKFLOW_CALL: ${{ fromJson(needs.metadata.outputs.is_workflow_call) }}
+          VIDEO_IS_SCHEDULED_DAILY: ${{ fromJson(needs.metadata.outputs.is_scheduled_daily) }}
+          VIDEO_IS_SCHEDULED_WEEKLY: ${{ fromJson(needs.metadata.outputs.is_scheduled_weekly) }}
           VIDEO_TITLE: ${{ inputs.video_title }}
           VIDEO_DESCRIPTION: ${{ inputs.video_description }}
           VIDEO_FILENAME: ${{ inputs.video_filename }}
@@ -186,7 +255,7 @@ jobs:
           #!/bin/bash
 
           ALL_DATES=(${{ fromJson(needs.metadata.outputs.all_dates) }})
-          VIDEO_DATES=( ${{ fromJson(needs.metadata.outputs.dates) }})
+          VIDEO_DATES=(${{ fromJson(needs.metadata.outputs.dates) }})
           VIDEO_FILES=(${{ fromJson(needs.metadata.outputs.files) }})
 
           # Create a temp directory for the input files
@@ -200,7 +269,7 @@ jobs:
           dates=($VIDEO_FILES)
           start_date="${dates[0]}"
           end_date="${dates[-1]}"
-          date_range=$start_date
+          date_range="$start_date"
 
           if [ "$start_date" != "$end_date" ]; then
             date_range="$start_date - $end_date"
@@ -208,8 +277,8 @@ jobs:
 
           declare -A placeholders
           placeholders=(
-            ["{date_start}"]=$start_date
-            ["{date_end}"]=$end_date
+            ["{start_date}"]=$start_date
+            ["{end_date}"]=$end_date
             ["{date_range}"]=$date_range
           )
 
