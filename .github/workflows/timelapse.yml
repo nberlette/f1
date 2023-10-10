@@ -166,20 +166,20 @@ jobs:
           else
             start_date="${VIDEO_START_DATE-}"
             timeframe="${VIDEO_TIMEFRAME-}"
-            end_date="$(date -j -v+${timeframe}d -f "%Y-%m-%d" "$start_date" +%Y-%m-%d)"
+            end_date="$(date -d "$start_date +${timeframe} days" +%Y-%m-%d)"
 
             # if the start_date is later than the latest date in the array
             # (index -1), then just use ${all_dates[-1]} as the start date.
             if [[ "$end_date" > "${all_dates[-1]}" ]]; then
               end_date="${all_dates[-1]}"
-              start_date="$(date -j -v-${timeframe}d -f "%Y-%m-%d" "$end_date" +%Y-%m-%d)"
+              start_date="$(date -d "$end_date -${timeframe} days" +%Y-%m-%d)"
             fi
 
             # if the start_date is earlier than the earliest date in the
             # array (index 0), then just use ${all_dates[0]} as the start date.
             if [[ "$start_date" < "${all_dates[0]}" ]]; then
               start_date="${all_dates[0]}"
-              end_date="$(date -j -v+${timeframe}d -f "%Y-%m-%d" "$start_date" +%Y-%m-%d)"
+              end_date="$(date -d "$start_date +${timeframe} days" +%Y-%m-%d)"
             fi
           fi
 
