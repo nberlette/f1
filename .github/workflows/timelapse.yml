@@ -136,7 +136,7 @@ jobs:
           fi
 
           end_date=$(date -d "$start_date + $VIDEO_TIMEFRAME days" +"%Y-%m-%d")
-          all_dates=($(cd assets && env ls -t1 --time=ctime -I "*.jpg") | uniq)
+          all_dates=($(cd assets && env ls -t1 --time=ctime -I "*.jpg"))
 
           dates=()
           files=()
