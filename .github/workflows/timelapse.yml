@@ -209,7 +209,11 @@ jobs:
           VIDEO_DESCRIPTION=${VIDEO_DESCRIPTION//"{date_range}"/$date_range}
           VIDEO_FILENAME=${VIDEO_FILENAME//"{date_start}"/$start_date}
           VIDEO_FILENAME=${VIDEO_FILENAME//"{date_end}"/$end_date}
-          VIDEO_FILENAME=${VIDEO_FILENAME//"{date_range}"/$date_range}
+          VIDEO_FILENAME=${VIDEO_FILENAME//"{date_range}"/"$(echo "$date_range" | tr -d ' ')"}
+
+          echo "title=$VIDEO_TITLE" >>$GITHUB_OUTPUT
+          echo "description=$VIDEO_DESCRIPTION" >>$GITHUB_OUTPUT
+          echo "filename=$VIDEO_FILENAME" >>$GITHUB_OUTPUT
 
           dates=()
           files=()
@@ -272,9 +276,9 @@ jobs:
           VIDEO_IS_WORKFLOW_CALL: ${{ fromJson(needs.metadata.outputs.is_workflow_call) }}
           VIDEO_IS_SCHEDULED_DAILY: ${{ fromJson(needs.metadata.outputs.is_scheduled_daily) }}
           VIDEO_IS_SCHEDULED_WEEKLY: ${{ fromJson(needs.metadata.outputs.is_scheduled_weekly) }}
-          VIDEO_TITLE: ${{ inputs.video_title }}
-          VIDEO_DESCRIPTION: ${{ inputs.video_description }}
-          VIDEO_FILENAME: ${{ inputs.video_filename }}
+          VIDEO_TITLE: ${{ needs.metadata.outputs.title }}
+          VIDEO_DESCRIPTION: ${{ needs.metadata.outputs.description }}
+          VIDEO_FILENAME: ${{ needs.metadata.outputs.filename }}
           VIDEO_WIDTH: ${{ inputs.video_width }}
           VIDEO_FPS: ${{ inputs.video_fps }}
           VIDEO_CRF: ${{ inputs.video_crf }}
@@ -283,6 +287,8 @@ jobs:
         run: |
           # Create a temp directory for the input files
           TIMELAPSE_DIR="$(mktemp -d -t timelapse-XXXXXXXXXX)"
+          VIDEO_DATES=($(jq -r '.[]' <<<"$VIDEO_DATES"))
+          VIDEO_FILES=($(jq -r '.[]' <<<"$VIDEO_FILES"))
           for date in "${VIDEO_DATES[@]}"; do
             mkdir -p "$TIMELAPSE_DIR/$date"
             cp -r "assets/$date" "$TIMELAPSE_DIR"
