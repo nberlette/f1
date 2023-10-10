@@ -369,7 +369,7 @@ jobs:
               "$VIDEO_TITLE" \
               "$VIDEO_URL" \
               "$VIDEO_URL"
-            )"
+          )"
 
           # open a pull request
           gh pr create \
