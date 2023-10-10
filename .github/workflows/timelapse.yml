@@ -248,6 +248,12 @@ jobs:
     needs: metadata
     runs-on: ubuntu-latest
     steps:
+      - name: Restore Cache
+        uses: actions/cache@v3
+        with:
+          path: assets
+          key: ${{ runner.os }}-assets-${{ github.sha }}
+
       - name: install ffmpeg
         run: |
           if ! command -v ffmpeg &>/dev/null; then
