@@ -234,7 +234,7 @@ jobs:
           VIDEO_FILES: ${{ needs.metadata.outputs.files }}
           VIDEO_DATES: ${{ needs.metadata.outputs.dates }}
           VIDEO_TIMEFRAME: ${{ needs.metadata.outputs.timeframe }}
-          VIDEO_ALL_DATES: ${{ fromJson(needs.metadata.outputs.all_dates) }}
+          # VIDEO_ALL_DATES: ${{ fromJson(needs.metadata.outputs.all_dates) }}
           VIDEO_START_DATE: ${{ needs.metadata.outputs.start_date }}
           VIDEO_END_DATE: ${{ needs.metadata.outputs.end_date }}
           VIDEO_DATE_RANGE: ${{ needs.metadata.outputs.date_range }}
@@ -254,10 +254,6 @@ jobs:
         run: |
           #!/bin/bash
 
-          ALL_DATES=(${{ fromJson(needs.metadata.outputs.all_dates) }})
-          VIDEO_DATES=(${{ fromJson(needs.metadata.outputs.dates) }})
-          VIDEO_FILES=(${{ fromJson(needs.metadata.outputs.files) }})
-
           # Create a temp directory for the input files
           TIMELAPSE_DIR="$(mktemp -d -t timelapse-XXXXXXXXXX)"
           for date in "${VIDEO_DATES[@]}"; do
@@ -266,7 +262,7 @@ jobs:
           done
 
           # Resolve placeholders for title, description, and filename
-          dates=($VIDEO_FILES)
+          dates=($VIDEO_DATES)
           start_date="${dates[0]}"
           end_date="${dates[-1]}"
           date_range="$start_date"
