@@ -17,7 +17,8 @@ on:
         description: |
           Provide a custom start date for the generated timelapse video. The
           format should be 'YYYY-MM-DD'. The 'end_date' will be calculated
-          using the 'timeframe' input value. Defaul
+          using the 'timeframe' input value. If no start date is provided, the
+          latest date will be used.
         required: false
       video_title:
         type: string
