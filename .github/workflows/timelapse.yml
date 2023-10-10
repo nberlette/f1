@@ -201,7 +201,7 @@ jobs:
           echo "end_date=$end_date" >>$GITHUB_OUTPUT
           echo "date_range=$date_range" >>$GITHUB_OUTPUT
 
-          VIDEO_TITLE=${VIDEO_TITLE//"{date_start}/$start_date}
+          VIDEO_TITLE=${VIDEO_TITLE//"{date_start}"/$start_date}
           VIDEO_TITLE=${VIDEO_TITLE//"{date_end}"/$end_date}
           VIDEO_TITLE=${VIDEO_TITLE//"{date_range}"/$date_range}
           VIDEO_DESCRIPTION=${VIDEO_DESCRIPTION//"{date_start}"/$start_date}
