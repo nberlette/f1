@@ -73,13 +73,6 @@ on:
           'slow'.
         default: "slow"
         required: false
-      video_tune:
-        type: string
-        description: |
-          Provide a custom tune for the generated video. The default value is
-          'film'.
-        default: "film"
-        required: false
       video_movflags:
         type: string
         description: |
@@ -182,7 +175,6 @@ jobs:
           VIDEO_FPS: ${{ inputs.video_fps }}
           VIDEO_CRF: ${{ inputs.video_crf }}
           VIDEO_PRESET: ${{ inputs.video_preset }}
-          VIDEO_TUNE: ${{ inputs.video_tune }}
           VIDEO_MOVFLAGS: ${{ inputs.video_movflags }}
         run: |
           #!/bin/bash
@@ -243,7 +235,7 @@ jobs:
             -c:v libx264 \
             -crf $VIDEO_CRF \
             -preset $VIDEO_PRESET \
-            -tune $VIDEO_TUNE \
+            -tune film \
             -movflags $VIDEO_MOVFLAGS \
             -metadata title="$VIDEO_TITLE" \
             -metadata description="$VIDEO_DESCRIPTION" \
