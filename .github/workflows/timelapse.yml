@@ -142,7 +142,13 @@ jobs:
           files=()
 
           for date in "${all_dates[@]}"; do
-            if [[ "$date" > "$start_date" && "$date" <= "$end_date" ]]; then
+            # if [[ "$date" > "$start_date" && "$date" < "$end_date" ]]; then
+            # we cannot compare dates with the > and < operators (like above), so we
+            # need to convert them to seconds since epoch first
+            date_sec=$(date -d "$date" +%s)
+            start_date_sec=$(date -d "$start_date" +%s)
+            end_date_sec=$(date -d "$end_date" +%s)
+            if (( date_sec >= start_date_sec && date_sec <= end_date_sec )); then
               dates+=("$date")
               files_in_date=($(ls assets/$date/*.jpg))
               files=("${files[@]}" "${files_in_date[@]}")
