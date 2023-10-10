@@ -221,6 +221,7 @@ jobs:
           done
 
           OUTPUT_PATH="assets/timelapse/$VIDEO_FILENAME"
+          mkdir -p "assets/timelapse"
           if [ -f "$OUTPUT_PATH" ]; then
             # If the file already exists, append a timestamp to the filename
             OUTPUT_PATH="assets/timelapse/$(date +%s)_$VIDEO_FILENAME"
