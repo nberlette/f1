@@ -1,5 +1,5 @@
 name: Timelapse
-run-name: "Generate ${{ inputs.timeframe }}day Timelapse for ${{ inputs.start_date }}"
+run-name: "Generate Timelapse${{ inputs.start_date && format(' for {0}', inputs.start_date) }} (${{ inputs.timeframe }} day${{ inputs.timeframe == '1' || 's'}})"
 on:
   schedule:
     - cron: "45 6 * * *"
@@ -26,7 +26,7 @@ on:
         description: |
           Provide a custom title for the generated video. Supports several
           different placeholders for dynamic values:
-            '{start_date}', '{end_date}', '{timeframe}', '{date_range}'
+            '{date_start}', '{date_end}', '{date_range}', '{timeframe}'
         default: "Timelapse for {date_range}"
         required: false
       video_description:
@@ -116,6 +116,9 @@ jobs:
       start_date: ${{ steps.collect.outputs.start_date }}
       end_date: ${{ steps.collect.outputs.end_date }}
       date_range: ${{ steps.collect.outputs.date_range }}
+      title: ${{ steps.collect.outputs.title }}
+      description: ${{ steps.collect.outputs.description }}
+      filename: ${{ steps.collect.outputs.filename }}
       is_scheduled: ${{ steps.collect.outputs.is_scheduled }}
       is_workflow_dispatch: ${{ steps.collect.outputs.is_workflow_dispatch }}
       is_workflow_call: ${{ steps.collect.outputs.is_workflow_call }}
@@ -138,6 +141,9 @@ jobs:
           IS_WORKFLOW_CALL: ${{ ((github.event_name == 'workflow_call' && 'true') || 'false') }}
           INPUT_TIMEFRAME: ${{ fromJson(inputs.timeframe || '1') }}
           VIDEO_START_DATE: ${{ (inputs.start_date || '') }}
+          VIDEO_TITLE: ${{ (inputs.video_title || 'Timelapse for {date_range}') }}
+          VIDEO_DESCRIPTION: ${{ (inputs.video_description || 'Timelapse video for {date_range}') }}
+          VIDEO_FILENAME: ${{ (inputs.video_filename || 'timelapse_{date_range}.mp4') }}
         run: |
           all_dates=("$(cd assets && \ls -t1 --time=ctime -I "*.jpg" | sort)")
           all_dates=($(printf '%s\n' "${all_dates[@]}" | tac | tr '\n' ' '; echo))
@@ -194,6 +200,16 @@ jobs:
           echo "start_date=$start_date" >>$GITHUB_OUTPUT
           echo "end_date=$end_date" >>$GITHUB_OUTPUT
           echo "date_range=$date_range" >>$GITHUB_OUTPUT
+
+          VIDEO_TITLE=${VIDEO_TITLE//"{date_start}/$start_date}
+          VIDEO_TITLE=${VIDEO_TITLE//"{date_end}"/$end_date}
+          VIDEO_TITLE=${VIDEO_TITLE//"{date_range}"/$date_range}
+          VIDEO_DESCRIPTION=${VIDEO_DESCRIPTION//"{date_start}"/$start_date}
+          VIDEO_DESCRIPTION=${VIDEO_DESCRIPTION//"{date_end}"/$end_date}
+          VIDEO_DESCRIPTION=${VIDEO_DESCRIPTION//"{date_range}"/$date_range}
+          VIDEO_FILENAME=${VIDEO_FILENAME//"{date_start}"/$start_date}
+          VIDEO_FILENAME=${VIDEO_FILENAME//"{date_end}"/$end_date}
+          VIDEO_FILENAME=${VIDEO_FILENAME//"{date_range}"/$date_range}
 
           dates=()
           files=()
