@@ -320,11 +320,66 @@ jobs:
         env:
           OUTPUT_PATH: ${{ env.OUTPUT_PATH }}
           VIDEO_TITLE: ${{ env.VIDEO_TITLE }}
+          START_DATE: ${{ needs.metadata.outputs.start_date }}
+          END_DATE: ${{ needs.metadata.outputs.end_date }}
+          TIMEFRAME: ${{ needs.metadata.outputs.timeframe }}
         run: |
           # Upload the timelapse to the repository
+          BRANCH_NAME="timelapse/${START_DATE}-$RANDOM"
+          git checkout -b "$BRANCH_NAME"
           git add "$OUTPUT_PATH"
           git commit -m "🎬 new timelapse: '$VIDEO_TITLE'"
           git push
+
+          PR_BODY="# 🎬 New Timelapse for $START_DATE - $END_DATE (${TIMEFRAME-} days)"$'\n\n'
+          PR_BODY+="> **Note**: This is an auto-generated PR. See something incorrect? Please open an issue!"$'\n\n'
+          PR_BODY+="## Video Details"$'\n\n'
+          PR_BODY+="| Label           | %-56s |"$'\n'
+          PR_BODY+="| :-------------- | $(printf '%-56s' ":" | tr ' ' '-') |"
+          PR_BODY+="| **Title**       | %-56s |"
+          PR_BODY+="| **Description** | %-56s |"
+          PR_BODY+="| **Filename**    | %-56s |"
+          PR_BODY+="| **Start Date**  | %-56s |"
+          PR_BODY+="| **End Date**    | %-56s |"
+          PR_BODY+="| **Timeframe**   | %-56s |"
+          PR_BODY+="| **Video Width** | %-56s |"
+          PR_BODY+="| **Video FPS**   | %-56s |"
+          PR_BODY+="| **Video CRF**   | %-56s |"
+          PR_BODY+="| **Preset**      | %-56s |"
+          PR_BODY+="| **Movflags**    | %-56s |"$'\n\n'
+          PR_BODY+="## 📺 Watch the timelapse video"$'\n\n[![%s](%s)](%s)\n\n'
+          PR_BODY+=$'---\n\nHey @nberlette 👋 please review and merge this PR when ready!\n\n'
+          PR_BODY+=$'- 🤖 The F1 Bot\n\n'
+
+          VIDEO_URL="https://github.com/nberlette/f1/raw/$BRANCH_NAME/$OUTPUT_PATH"
+          PR_BODY="$(
+            printf "$PR_BODY\n\n" \
+              "Value" \
+              "$VIDEO_TITLE" \
+              "$VIDEO_DESCRIPTION" \
+              "$VIDEO_FILENAME" \
+              "$START_DATE" \
+              "$END_DATE" \
+              "$TIMEFRAME" \
+              "$VIDEO_WIDTH" \
+              "$VIDEO_FPS" \
+              "$VIDEO_CRF" \
+              "$VIDEO_PRESET" \
+              "$VIDEO_MOVFLAGS" \
+              "$VIDEO_TITLE" \
+              "$VIDEO_URL" \
+              "$VIDEO_URL"
+            )"
+
+          # open a pull request
+          gh pr create \
+            -t "🎬 new timelapse: '$VIDEO_TITLE'" \
+            -l timelapse,assets,automation \
+            -r nberlette \
+            -a nberlette \
+            -b "$PR_BODY" \
+            -B main \
+            -H "$BRANCH_NAME"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
