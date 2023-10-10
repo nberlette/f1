@@ -11,14 +11,14 @@ on:
           Time range (in days) to generate the timelapse video for. Value must
           be between no less than 1.
         required: true
-        default: 1
+        default: "1"
       start_date:
         type: string
         description: |
           Provide a custom start date for the generated timelapse video. The
           format should be 'YYYY-MM-DD'. The 'end_date' will be calculated
           using the 'timeframe' input value. If no start date is provided, the
-          latest date will be used.
+          latest date will be used..
         required: false
       video_title:
         type: string
@@ -104,7 +104,7 @@ jobs:
 
       - name: Cache Assets Directory
         id: cache-hit
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: assets
           key: ${{ runner.os }}-assets-${{ github.sha }}
@@ -253,7 +253,7 @@ jobs:
             -y "$OUTPUT_PATH"
 
           # Cleanup
-          rm -rf "$TIMELAPSE_DIR"]
+          rm -rf "$TIMELAPSE_DIR"
 
       - name: Commit and Push
         env:
