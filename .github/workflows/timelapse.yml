@@ -1,5 +1,5 @@
 name: Timelapse
-run-name: "Generate Timelapse for ${{ inputs.start_date }} (${{ inputs.timeframe }} days)"
+run-name: "Generate ${{ inputs.timeframe }}day Timelapse for ${{ inputs.start_date }}"
 on:
   schedule:
     - cron: "45 6 * * *"
