@@ -1,10 +1,10 @@
 name: Timelapse
 run-name: "Generate Timelapse for ${{ format('{0} - {1}', inputs.start_date, inputs.end_date) }}"
 on:
-  schedule:
-    - cron: "45 6 * * *"
-    - cron: "30 6 * * SUN"
-  workflow_call:
+  # schedule:
+  #   - cron: "45 6 * * *"
+  #   - cron: "30 6 * * SUN"
+  # workflow_call:
   workflow_dispatch:
     inputs:
       start_date:
@@ -42,71 +42,32 @@ on:
         required: false
       video_size:
         description: |
-          Provide a custom size for the video. Default is '1920x1080'.
-        type: choice
-        options:
-          - 2048x1536
-          - 1920x1440
-          - 1920x1080
-          - 1280x960
-          - 1280x720
-          - 1024x768
-          - 800x600
-          - 640x480
-
+          Provide a custom size for the video. Default is '1024x768'.
+        type: string
+        default: "1024x768"
         required: false
       video_fps:
-        description: "Provide a custom framerate (frames per second) for the video. Default is '15'."
-        type: choice
-        options:
-          - 1
-          - 3
-          - 5
-          - 7
-          - 9
-          - 10
-          - 13
-          - 15
-          - 18
-          - 21
-          - 25
-          - 30
-          - 60
+        description: "Provide a custom framerate (frames per second) for the video. Default is 5."
+        type: number
         default: '15'
         required: false
       video_codec:
         description: "Provide a custom codec for the video. Default is 'libx264'."
         default: libx264
-        type: choice
-        options:
-          - libx264
-          - libx265
-          - libvpx
-          - libvpx-vp9
-          - libaom-av1
-          - libxvid
-          - libsvtav1
+        type: string
         required: false
-      video_pixfmt:
-        type: choice
-        description: "Provide custom pixfmt flag for the video. Default is 'yuv420p'."
-        default: yuv420p
-        options:
-          - yuv420p
-          - yuv422p
-          - yuv444p
-          - yuv420p10le
-          - yuv422p10le
+      video_format:
+        type: string
+        description: "Provide custom format flag (-vf) for the video."
+        default: "scale=-2:1080,format=yuv420p"
         required: false
       video_output:
-        type: choice
+        type: string
         description: "Provide a custom output path for the video. This will be the directory the 'video_filename' is output to. Default is 'assets/timelapse'."
         default: assets/timelapse
-        options:
-          - assets/timelapse
 jobs:
   generate_video:
-    name: "Collect Metadata and Files"
+    name: "Generate Timelapse Video"
     runs-on: ubuntu-latest
     outputs:
       files: ${{ steps.collect.outputs.files }}
@@ -312,9 +273,24 @@ jobs:
           files: ${{ steps.collect.outputs.files }}
           dates: ${{ steps.collect.outputs.dates }}
           all_dates: ${{ steps.collect.outputs.all_dates }}
+          VIDEO_FPS: ${{ env.VIDEO_FPS || inputs.video_fps }}
+          VIDEO_CODEC: ${{ env.VIDEO_CODEC || inputs.video_codec }}
+          VIDEO_SIZE: ${{ env.VIDEO_SIZE || inputs.video_size }}
+          VIDEO_FORMAT: ${{ env.VIDEO_FORMAT || inputs.video_format }}
+          VIDEO_DATES: ${{ steps.collect.outputs.dates }}
+          VIDEO_FILES: ${{ steps.collect.outputs.files }}
         run: |
+          TIMELAPSE_DIR="$(mktemp -d -t timelapse-XXXXXXXXXX)"
+          VIDEO_DATES=($(jq -r '.[]' <<<"$VIDEO_DATES"))
+          VIDEO_FILES=($(jq -r '.[]' <<<"$VIDEO_FILES"))
+          for date in "${VIDEO_DATES[@]}"; do
+            mkdir -p "$TIMELAPSE_DIR/$date"
+            cp -r "assets/$date" "$TIMELAPSE_DIR"
+          done
+
           OUTPUT_DIR="assets/timelapse"
-          OUTPUT_PATH="${OUTPUT_DIR-}/${VIDEO_FILENAME:-"timelapse_${date_range// /_}.mp4"}"
+          VIDEO_FILENAME="${VIDEO_FILENAME:-"timelapse_${date_range// /_}.mp4"}"
+          OUTPUT_PATH="${OUTPUT_DIR-}/${VIDEO_FILENAME-}"
           mkdir -p "${OUTPUT_DIR-}"
           if [ -f "${OUTPUT_PATH-}" ]; then
             # If the file already exists, append a timestamp to the filename
@@ -326,7 +302,7 @@ jobs:
           echo "description=${VIDEO_DESCRIPTION:-}" >>$GITHUB_OUTPUT
           echo "filename=${VIDEO_FILENAME:-}" >>$GITHUB_OUTPUT
 
-          VIDEO_FPS=${VIDEO_FPS:-15}
+          VIDEO_FPS=${VIDEO_FPS:-5}
 
           echo "⏱️ Generating timelapse video... 🎬"
           echo "📸 Image Count: ${#files[@]} from ${#dates[@]} days"
@@ -336,17 +312,14 @@ jobs:
           echo "📎 Output File: ${VIDEO_FILENAME:-}"
 
           ffmpeg \
+            -framerate ${VIDEO_FPS} \
             -pattern_type glob \
-            -i "./assets/*/*.jpg" \
-            -s "${VIDEO_SIZE:-"1920x1080"}" \
+            -i "${TIMELAPSE_DIR-}/${VIDEO_DATES[@]}/*.jpg" \
+            -s "${VIDEO_SIZE:-"1024x768"}" \
             -vcodec ${VIDEO_CODEC:-"libx264"} \
-            -pix_fmt ${VIDEO_PIXFMT:-"yuv420p"} \
-            -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
+            -vf "${VIDEO_FORMAT:-"scale=-2:1080,format=yuv420p"}" \
             -r $((VIDEO_FPS * 2)) \
-            -framerate $VIDEO_FPS \
             -an \
-            -crf 17 \
-            -preset "${VIDEO_PRESET:-"slow"}" \
             -tune film \
             -movflags +faststart \
             -metadata title="${title:-}" \
@@ -389,8 +362,8 @@ jobs:
           COMMIT_BODY+="| **Video Size**  | %-56s |"$'\n'
           COMMIT_BODY+="| **Video FPS**   | %-56s |"$'\n'
           COMMIT_BODY+="| **Video Codec** | %-56s |"$'\n'
+          COMMIT_BODY+="| **Video Flags** | %-56s |"$'\n'
           COMMIT_BODY+="| **Preset**      | %-56s |"$'\n'
-          COMMIT_BODY+="| **Pix Format**  | %-56s |"$'\n'
           COMMIT_BODY="$(
             printf "${COMMIT_BODY}\n\n" \
               "Value" \
@@ -403,8 +376,8 @@ jobs:
               "${VIDEO_SIZE:-}" \
               "${VIDEO_FPS:-}" \
               "${VIDEO_CODEC:-}" \
-              "${VIDEO_PRESET:-}" \
-              "${VIDEO_PIXFMT:-}"
+              "${VIDEO_FORMAT:-}" \
+              "${VIDEO_PRESET:-}"
           )"
 
           # create a new branch, commit, and push
