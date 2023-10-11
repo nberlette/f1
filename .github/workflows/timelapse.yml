@@ -225,7 +225,7 @@ jobs:
               if [[ "$cur" < "$end_date" || "$cur" == "$end_date" ]]; then
                 dates+=("$cur")
                 git sparse-checkout add "assets/$cur"
-                files+=($(git ls-tree --name-only -r HEAD:"assets/$cur"))
+                files+=($(git ls-files assets/$cur))
               fi
             fi
           done
@@ -312,7 +312,6 @@ jobs:
           files: ${{ steps.collect.outputs.files }}
           dates: ${{ steps.collect.outputs.dates }}
           all_dates: ${{ steps.collect.outputs.all_dates }}
-
         run: |
           OUTPUT_DIR="assets/timelapse"
           OUTPUT_PATH="${OUTPUT_DIR-}/${VIDEO_FILENAME:-"timelapse_${date_range// /_}.mp4"}"
@@ -337,14 +336,14 @@ jobs:
           echo "📎 Output File: ${VIDEO_FILENAME:-}"
 
           ffmpeg \
-            -r $((VIDEO_FPS * 2)) \
-            -framerate $VIDEO_FPS
             -pattern_type glob \
             -i "./assets/*/*.jpg" \
             -s "${VIDEO_SIZE:-"1920x1080"}" \
             -vcodec ${VIDEO_CODEC:-"libx264"} \
             -pix_fmt ${VIDEO_PIXFMT:-"yuv420p"} \
             -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
+            -r $((VIDEO_FPS * 2)) \
+            -framerate $VIDEO_FPS \
             -an \
             -crf 17 \
             -preset "${VIDEO_PRESET:-"slow"}" \
