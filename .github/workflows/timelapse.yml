@@ -139,32 +139,40 @@ jobs:
     steps:
       - name: "Checkout Repo (sparse)"
         id: collect
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
         run: |
           # sparse checkout the repository
           # because our specific requirements aren't met by the default action,
           # we opt for using custom checkout logic rather than actions/checkout
           # ------------------------------------------------------------------
-          REPO="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
+          REPO="https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global fetch.parallel 32
 
-          git clone --filter=blob:none --no-checkout --depth 1  --sparse $REPO .
+          git clone --filter=blob:none --no-checkout --depth 1 --sparse $REPO .
           git sparse-checkout init --cone
           git sparse-checkout add . .github src src/kv src/helpers
 
           all_dates=($(git ls-tree --name-only -d -r HEAD:assets .))
           TOTAL_DATES="${#all_dates[@]}"
 
-          # normalize our inputs
+          # normalize inputs
           # ------------------------------------------------------------------
+
           MAX_TIMEFRAME=60
           DEFAULT_TIMEFRAME=7
           VIDEO_TIMEFRAME=${DEFAULT_TIMEFRAME}
-          if [[ "$IS_SCHEDULED" == "true" ]]; thena
+
+          if [[ "$IS_SCHEDULED" == "true" ]]; then
             [[ "$IS_SCHEDULED_DAILY" == "true" ]] && VIDEO_TIMEFRAME=1
             [[ "$IS_SCHEDULED_WEEKLY" == "true" ]] && VIDEO_TIMEFRAME=7
           fi
+
           if ((VIDEO_TIMEFRAME > TOTAL_DATES)); then
             VIDEO_TIMEFRAME="$TOTAL_DATES"
           elif ((VIDEO_TIMEFRAME > MAX_TIMEFRAME)); then
@@ -198,20 +206,24 @@ jobs:
           fi
 
           date_range="$start_date"
-          [[ "$start_date" == "$end_date" ]] || date_range="$start_date - $end_date";
+          if [[ "$start_date" != "$end_date" ]]; then
+            date_range="$start_date - $end_date"
+          fi
 
           # determine the 'timeframe' as the time between dates, in days.
           timeframe=$(($(($(date -d "$end_date" +%s) - $(date -d "$start_date" +%s))) / 86400))
+
           ((timeframe <= 0)) && timeframe=1
 
           # ------------------------------------------------------------------
           # collect the dates and files, add them to the sparse checkout
           # ------------------------------------------------------------------
-          dates=() files=()
+          dates=()
+          files=()
           for cur in "${all_dates[@]}"; do
             if [[ "$cur" > "$start_date" || "$cur" == "$start_date" ]]; then
               if [[ "$cur" < "$end_date" || "$cur" == "$end_date" ]]; then
-                dates+=("$cur");
+                dates+=("$cur")
                 git sparse-checkout add "assets/$cur"
                 files+=($(git ls-tree --name-only -r HEAD:"assets/$cur"))
               fi
@@ -228,7 +240,7 @@ jobs:
 
           echo "all_dates=${all_dates_str-}" >>$GITHUB_OUTPUT
           echo "dates=${dates_str-}" >>$GITHUB_OUTPUT
-          echo "files="${files_str-}" >>$GITHUB_OUTPUT
+          echo "files=${files_str-}" >>$GITHUB_OUTPUT
 
           VIDEO_TITLE=${VIDEO_TITLE//"{date_start}"/$start_date}
           VIDEO_TITLE=${VIDEO_TITLE//"{date_end}"/$end_date}
@@ -254,7 +266,6 @@ jobs:
           echo "is_workflow_call=${IS_WORKFLOW_CALL}" >>$GITHUB_OUTPUT
           echo "is_scheduled_daily=${IS_SCHEDULED_DAILY}" >>$GITHUB_OUTPUT
           echo "is_scheduled_weekly=${IS_SCHEDULED_WEEKLY}" >>$GITHUB_OUTPUT
-
       - id: cache
         name: "Cache Assets"
         uses: actions/cache@v3
