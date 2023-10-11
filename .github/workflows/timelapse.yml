@@ -49,7 +49,7 @@ on:
       video_fps:
         description: "Provide a custom framerate (frames per second) for the video. Default is 5."
         type: number
-        default: '15'
+        default: '5'
         required: false
       video_codec:
         description: "Provide a custom codec for the video. Default is 'libx264'."
