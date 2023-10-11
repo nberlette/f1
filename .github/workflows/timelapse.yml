@@ -383,7 +383,7 @@ jobs:
           git checkout -b "${BRANCH_NAME}"
           git add --sparse "${OUTPUT_PATH}"
           git commit -m "feat: 🎬 new timelapse for ${VIDEO_START_DATE-}"$'\n\n'"${COMMIT_BODY-}"
-          git push
+          git push --set-upstream origin "${BRANCH_NAME}"
 
 
           # create the pull request body
