@@ -281,8 +281,8 @@ jobs:
           VIDEO_FILES: ${{ steps.collect.outputs.files }}
         run: |
           TIMELAPSE_DIR="$(mktemp -d -t timelapse-XXXXXXXXXX)"
-          VIDEO_DATES=($(jq 'fromjson | .[]' <<<"$VIDEO_DATES"))
-          VIDEO_FILES=($(jq 'fromjson | .[]' <<<"$VIDEO_FILES"))
+          VIDEO_DATES=($(jq -r 'fromjson | .[]' <<<"$VIDEO_DATES"))
+          VIDEO_FILES=($(jq -r 'fromjson | .[]' <<<"$VIDEO_FILES"))
           for date in "${VIDEO_DATES[@]}"; do
             mkdir -p "$TIMELAPSE_DIR/$date"
             cp -r "assets/$date" "$TIMELAPSE_DIR"
