@@ -381,7 +381,7 @@ jobs:
 
           # create a new branch, commit, and push
           git checkout -b "${BRANCH_NAME}"
-          git add "${OUTPUT_PATH}"
+          git add --sparse "${OUTPUT_PATH}"
           git commit -m "feat: 🎬 new timelapse for ${VIDEO_START_DATE-}"$'\n\n'"${COMMIT_BODY-}"
           git push
 
