@@ -341,7 +341,7 @@ jobs:
           TIMEFRAME: ${{ steps.collect.outputs.timeframe }}
         run: |
           # create a new branch for our timelapse
-          BRANCH_NAME="timelapse/${VIDEO_START_DATE}${VIDEO_END_DATE:+"_-_${VIDEO_END_DATE}"}"
+          BRANCH_NAME="timelapse/${VIDEO_START_DATE}${VIDEO_END_DATE:+"_${VIDEO_END_DATE}"}"
 
           COMMIT_BODY=$'Video Details:\n\n'
           COMMIT_BODY+="| Label           | %-56s |"$'\n'
