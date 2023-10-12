@@ -266,7 +266,7 @@ jobs:
           files: ${{ steps.collect.outputs.files }}
           dates: ${{ steps.collect.outputs.dates }}
           all_dates: ${{ steps.collect.outputs.all_dates }}
-          VIDEO_FPS: ${{ toJson(env.VIDEO_FPS || inputs.video_fps) }}
+          VIDEO_FPS: ${{ env.VIDEO_FPS || inputs.video_fps }}
           VIDEO_CODEC: ${{ env.VIDEO_CODEC || inputs.video_codec }}
           VIDEO_SIZE: ${{ env.VIDEO_SIZE || inputs.video_size }}
           VIDEO_FORMAT: ${{ env.VIDEO_FORMAT || inputs.video_format }}
