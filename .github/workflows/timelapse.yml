@@ -1,34 +1,27 @@
 name: Timelapse
 run-name: "Generate Timelapse for ${{ format('{0} - {1}', inputs.start_date, inputs.end_date) }}"
 on:
-  schedule:
+  # schedule:
     # - cron: "45 6 * * *"
-    - cron: "30 6 * * SUN"
+    # - cron: "30 6 * * SUN"
   # workflow_call:
   workflow_dispatch:
     inputs:
+      create_pr:
+        type: boolean
+        description: "Create a Pull Request for the video?"
+        default: true
       start_date:
         type: string
-        description: |
-          Provide a custom start date for the generated timelapse video. The
-          format should be 'YYYY-MM-DD'. The earliest date available is '2023-06-03'.
+        description: "Start date for the video (YYYY-MM-DD). No earlier than '2023-06-03'."
         required: true
       end_date:
         type: string
-        description: |
-          Provide a custom end date for the generated timelapse video. The
-          format should be 'YYYY-MM-DD'. The latest date available is today's date.
+        description: "End date for the video (YYYY-MM-DD)."
         required: true
-      create_pr:
-        type: boolean
-        description: "Create a pull request? (if not, will be uploaded as an artifact only)"
-        default: false
-        required: false
       video_title:
         type: string
-        description: |
-          Provide a custom title for the video. Supports several placeholders:
-            '{date_start}', '{date_end}', '{date_range}', '{timeframe}'
+        description: "Video title. Allows placeholders: '{date_start}', '{date_end}', '{date_range}', '{timeframe}'"
         default: "Timelapse for {date_range}"
         required: false
       video_description:
@@ -42,23 +35,23 @@ on:
         default: "timelapse_{date_range}.mp4"
         required: false
       video_size:
-        description: "Provide a custom size for the video. Default is '1024x768'."
+        description: "Resolution (width x height)"
         type: string
         default: "1024x768"
         required: false
       video_fps:
-        description: "Framerate (fps) for the video. Default is 5."
+        description: "Framerate (fps)"
         type: number
         default: 5
         required: false
       video_codec:
-        description: "Codec for the video. Default is 'libx264'."
+        description: "Codec (-vcodec)"
         default: libx264
         type: string
         required: false
       video_format:
         type: string
-        description: "Format flags (-vf) for the video."
+        description: "Format flags (-vf)"
         default: "scale=-2:1080,format=yuv420p"
         required: false
 jobs:
@@ -426,4 +419,3 @@ jobs:
 
           # open the pull request using the github cli
           gh pr create --title "${PR_TITLE}" -b "${PR_BODY}" -l timelapse,assets,automated -r "${GITHUB_ACTOR}" -a "${GITHUB_ACTOR}" -B main -H "${BRANCH_NAME}"
-          
