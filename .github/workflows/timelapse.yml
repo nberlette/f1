@@ -405,6 +405,7 @@ jobs:
           
             gh pr create \
               -B "main" \
+              -H "$BRANCH_NAME" \
               -t "$PR_TITLE" \
               -b "$PR_BODY" \
               -l "$PR_LABELS$(printf ',%s' "${PR_LABELS[@]:1}")" \
