@@ -13,29 +13,29 @@ on:
         default: true
       start_date:
         type: string
-        description: "Start date (no earlier than '2023-06-03'):"
+        description: "Start date (YYYY-MM-DD):"
         required: true
       end_date:
         type: string
-        description: "End date, in 'YYYY-MM-DD' format:"
+        description: "End date (YYYY-MM-DD):"
         required: true
       video_title:
         type: string
-        description: "Video title (supported placeholders are '{date_start}', '{date_end}', '{date_range}'):"
+        description: "Title (supports vars '{date_start}', '{date_end}', '{date_range}'):"
         default: "Timelapse for {date_range}"
         required: false
       video_description:
         type: string
-        description: "Video Description:"
+        description: "Description:"
         default: "Las Vegas Formula 1 Track construction from {date_range}"
         required: false
       video_filename:
         type: string
-        description: "Output Filename:"
+        description: "Filename:"
         default: "timelapse_{date_start}_{date_end}.mp4"
         required: false
       video_size:
-        description: "Resolution (width x height):"
+        description: "Resolution (w x h):"
         type: string
         default: "1024x768"
         required: false
@@ -45,13 +45,13 @@ on:
         default: 5
         required: false
       video_codec:
-        description: "Codec (-vcodec flag):"
+        description: "Codec (-vcodec):"
         default: libx264
         type: string
         required: false
       video_format:
         type: string
-        description: "Format flags (-vf flag):"
+        description: "Format flags (-vf):"
         default: "scale=-2:1080,format=yuv420p"
         required: false
 jobs:
@@ -215,7 +215,7 @@ jobs:
             ${{ runner.os }}-assets-${{ github.sha }}
             ${{ runner.os }}-assets-
 
-      - name: install ffmpeg
+      - name: Install ffmpeg
         run: |
           if ! command -v ffmpeg &>/dev/null; then
             if command -v brew &>/dev/null; then
@@ -351,7 +351,7 @@ jobs:
           name: ${{ env.VIDEO_FILENAME }}
 
       - id: create_pr
-        name: "Commit + Create Pull Request"
+        name: "Create Pull Request"
         run: |
           if [ -n "$CREATE_PR" ] && [[ "$CREATE_PR" != "false" ]]; then
             OUTPUT_PATH=${{ steps.generate.outputs.path }}
@@ -409,6 +409,8 @@ jobs:
               -l "${PR_LABELS}$(printf ',%s' "${PR_LABELS[@]:1}" \
               -r "$GITHUB_ACTOR" \
               -a "$GITHUB_ACTOR"
+          else
+            echo "❌ Create Pull Request step is disabled. Skipping..."
           fi
       - if: always() && env.DEBUG_LOG
         name: Upload Debug Log
