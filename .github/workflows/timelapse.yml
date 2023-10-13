@@ -354,7 +354,7 @@ jobs:
         name: "Create Pull Request"
         run: |
           OUTPUT_PATH=${{ toJson(steps.generate.outputs.path) }}
-          VIDEO_TITLE=${{ toJson(teps.generate.outputs.title) }}
+          VIDEO_TITLE=${{ toJson(steps.generate.outputs.title) }}
           START_DATE=${{ toJson(steps.collect.outputs.start_date) }}
           END_DATE=${{ toJson(steps.collect.outputs.end_date) }}
           TIMEFRAME=${{ steps.collect.outputs.timeframe }}
