@@ -358,10 +358,10 @@ jobs:
           START_DATE=${{ toJson(steps.collect.outputs.start_date) }}
           END_DATE=${{ toJson(steps.collect.outputs.end_date) }}
           TIMEFRAME=${{ steps.collect.outputs.timeframe }}
-          
+                    
           if [ -n "$CREATE_PR" ] && [[ "$CREATE_PR" != "false" ]]; then
             BRANCH_NAME="timelapse/${START_DATE}${END_DATE:+_${END_DATE}}"
-  
+          
             COMMIT_BODY=""
             COMMIT_BODY+=$(printf "| Label           | %-56s |\n" "Value")
             COMMIT_BODY+=$(printf "| :-------------- | %-56s |\n" "$(printf '%-56s' ":" | tr ' ' '-')")
@@ -376,22 +376,22 @@ jobs:
             COMMIT_MSG="$(
               printf \
                 "feat: 🎬 new timelapse for %s\n\nVideo Details:\n\n$%s" \
-                "$START_DATE${END_DATE:+" - ${END_DATE}" \
+                "$START_DATE${END_DATE:+" - ${END_DATE}"}" \
                 "$COMMIT_BODY"
             )"
             git checkout -b "$BRANCH_NAME"
             git add --sparse "$OUTPUT_PATH"
             git commit -m "$COMMIT_MSG"
             git push --set-upstream origin "$BRANCH_NAME"
-  
+          
             VIDEO_URL="https://github.com/${GITHUB_REPOSITORY}/raw/${BRANCH_NAME}/${OUTPUT_PATH}"
             PR_BODY=$(printf "## 📝 Video Details\n\n%s\n\n" "$COMMIT_BODY")
             PR_BODY+=$(printf "## 📺 Download the full video\n\n- [x] [%s](%s)\n\n---\n\n" "$VIDEO_TITLE" "$VIDEO_URL")
             PR_BODY+="👋 Project maintainers, please review and merge this PR when ready!"
             PR_BODY+=$'\n- 🤖 The F1 Bot\n\n'
             PR_BODY+="> **Note**: if this automated PR is incorrect, please open an issue."
-  
-            PR_TITLE=$(printf '🎬 New Timelapse for %s (%d days)' "$START_DATE${END_DATE:+ - $END_DATE}" "$TIMEFRAME")
+          
+            PR_TITLE=$(printf '🎬 New Timelapse for %s (%d days)' "$START_DATE${END_DATE:+" - $END_DATE"}" "$TIMEFRAME")
             PR_PROJECT="Timelapse"
             PR_LABELS=(assets automated timelapse)
             ALL_LABELS=($(gh label list --json name --jq '.[].name'))
@@ -402,7 +402,7 @@ jobs:
                 gh label create "$label" -c "#${label_color}"
               fi
             done
-  
+          
             gh pr create \
               -B "main" \
               -t "$PR_TITLE" \
@@ -413,6 +413,7 @@ jobs:
           else
             echo "❌ Create Pull Request step is disabled. Skipping..."
           fi
+
       - if: always() && env.DEBUG_LOG
         name: Upload Debug Log
         uses: actions/upload-artifact@v3
