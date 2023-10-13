@@ -2,69 +2,58 @@ name: Timelapse
 run-name: "Generate Timelapse for ${{ format('{0} - {1}', inputs.start_date, inputs.end_date) }}"
 on:
   # schedule:
-  #   - cron: "45 6 * * *"
-  #   - cron: "30 6 * * SUN"
+    # - cron: "45 6 * * *"
+    # - cron: "30 6 * * SUN"
   # workflow_call:
   workflow_dispatch:
     inputs:
+      create_pr:
+        type: boolean
+        description: "Create a Pull Request for the video?"
+        default: true
       start_date:
         type: string
-        description: |
-          Provide a custom start date for the generated timelapse video. The
-          format should be 'YYYY-MM-DD'. The earliest date available is '2023-06-03'.
+        description: "Start date (no earlier than '2023-06-03'):"
         required: true
       end_date:
         type: string
-        description: |
-          Provide a custom end date for the generated timelapse video. The
-          format should be 'YYYY-MM-DD'. The latest date available is today's date.
+        description: "End date, in 'YYYY-MM-DD' format:"
         required: true
       video_title:
         type: string
-        description: |
-          Provide a custom title for the video. Supports several placeholders:
-            '{date_start}', '{date_end}', '{date_range}', '{timeframe}'
+        description: "Video title (supported placeholders are '{date_start}', '{date_end}', '{date_range}'):"
         default: "Timelapse for {date_range}"
         required: false
       video_description:
         type: string
-        description: |
-          Provide a custom description for the video. The same
-          placeholder rules apply as with titles.
-        default: "Timelapse video for {date_range}"
+        description: "Video Description:"
+        default: "Las Vegas Formula 1 Track construction from {date_range}"
         required: false
       video_filename:
         type: string
-        description: |
-          Provide a custom filename for the video. The extension must be '.mp4'.
-          Supports same placeholders as the title and description inputs.
-        default: "timelapse_{date_range}.mp4"
+        description: "Output Filename:"
+        default: "timelapse_{date_start}_{date_end}.mp4"
         required: false
       video_size:
-        description: |
-          Provide a custom size for the video. Default is '1024x768'.
+        description: "Resolution (width x height):"
         type: string
         default: "1024x768"
         required: false
       video_fps:
-        description: "Provide a custom framerate (frames per second) for the video. Default is 5."
+        description: "Framerate (fps):"
         type: number
-        default: '5'
+        default: 5
         required: false
       video_codec:
-        description: "Provide a custom codec for the video. Default is 'libx264'."
+        description: "Codec (-vcodec flag):"
         default: libx264
         type: string
         required: false
       video_format:
         type: string
-        description: "Provide custom format flag (-vf) for the video."
+        description: "Format flags (-vf flag):"
         default: "scale=-2:1080,format=yuv420p"
         required: false
-      video_output:
-        type: string
-        description: "Provide a custom output path for the video. This will be the directory the 'video_filename' is output to. Default is 'assets/timelapse'."
-        default: assets/timelapse
 jobs:
   generate_video:
     name: "Generate Timelapse Video"
@@ -80,11 +69,6 @@ jobs:
       title: ${{ steps.collect.outputs.title }}
       description: ${{ steps.collect.outputs.description }}
       filename: ${{ steps.collect.outputs.filename }}
-      is_scheduled: ${{ steps.collect.outputs.is_scheduled }}
-      is_workflow_dispatch: ${{ steps.collect.outputs.is_workflow_dispatch }}
-      is_workflow_call: ${{ steps.collect.outputs.is_workflow_call }}
-      is_scheduled_daily: ${{ steps.collect.outputs.is_scheduled_daily }}
-      is_scheduled_weekly: ${{ steps.collect.outputs.is_scheduled_weekly }}
     env:
       CACHE_KEY: ${{ inputs.start_date }}-${{ inputs.end_date }}
       IS_SCHEDULED: ${{ ((github.event_name == 'schedule' && 'true') || 'false') }}
@@ -97,13 +81,12 @@ jobs:
       VIDEO_TITLE: ${{ (inputs.video_title || 'Timelapse for {date_range}') }}
       VIDEO_DESCRIPTION: ${{ (inputs.video_description || 'Timelapse video for {date_range}') }}
       VIDEO_FILENAME: ${{ (inputs.video_filename || format('timelapse_{0}_-_{1}.mp4', inputs.start_date, inputs.end_date)) }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_ACTOR: ${{ github.actor }}
     steps:
       - name: "Checkout Repo (sparse)"
         id: collect
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_ACTOR: ${{ github.actor }}
         run: |
           # using custom checkout logic rather than actions/checkout
           REPO="https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
@@ -114,13 +97,11 @@ jobs:
 
           git clone --filter=blob:none --no-checkout --depth 1 --sparse $REPO .
           git sparse-checkout init --cone
-          git sparse-checkout add . .github src src/kv src/helpers
+          git sparse-checkout add . .github/workflows src src/kv src/helpers
 
           all_dates=($(git ls-tree --name-only -d -r HEAD:assets .))
           TOTAL_DATES="${#all_dates[@]}"
 
-          # normalize inputs
-          # ------------------------------------------------------------------
           MAX_TIMEFRAME=60
           DEFAULT_TIMEFRAME=7
           VIDEO_TIMEFRAME=${DEFAULT_TIMEFRAME}
@@ -139,10 +120,10 @@ jobs:
           start_date="${VIDEO_START_DATE:-}"
           end_date="${VIDEO_END_DATE:-}"
 
-          [ -z "${VIDEO_START_DATE:-}" ] && start_date="${all_dates[@]:$((TOTAL_DATES - DEFAULT_TIMEFRAME)):1}"
-          [ -z "${VIDEO_END_DATE:-}" ] && end_date="${all_dates[@]:$((TOTAL_DATES - 1)):1}"
-
-          if [ -n "${VIDEO_START_DATE:-}" ] && [ -n "${VIDEO_END_DATE:-}" ]; then
+          if [ -z "${VIDEO_START_DATE:-}" ] && [ -z "${VIDEO_END_DATE:-}" ]; then
+            start_date="${all_dates[@]:$(($((TOTAL_DATES - 1)) - VIDEO_TIMEFRAME)):1}"
+            end_date="${all_dates[@]:$((TOTAL_DATES - 1)):1}"
+          else
             start_date="${VIDEO_START_DATE-}"
             end_date="${VIDEO_END_DATE-}"
 
@@ -169,8 +150,8 @@ jobs:
 
           # determine the 'timeframe' as the time between dates, in days.
           timeframe=$(($(($(date -d "$end_date" +%s) - $(date -d "$start_date" +%s))) / 86400))
-
           ((timeframe <= 0)) && timeframe=1
+          VIDEO_TIMEFRAME=$timeframe
 
           # collect the dates and files, add them to the sparse checkout
           dates=()
@@ -186,15 +167,9 @@ jobs:
           done
           git checkout
 
-          # output the results as JSON to GitHub Actions Outputs
-          
-          all_dates_str="$(printf '%s\n' "${all_dates[@]}" | jq -R . | jq -c -s '@json')"
-          dates_str="$(printf '%s\n' "${dates[@]}" | jq -R . | jq -c -s '@json')"
-          files_str="$(printf '%s\n' "${files[@]}" | jq -R . | jq -c -s '@json')"
-
-          echo "all_dates=${all_dates_str-}" >>$GITHUB_OUTPUT
-          echo "dates=${dates_str-}" >>$GITHUB_OUTPUT
-          echo "files=${files_str-}" >>$GITHUB_OUTPUT
+          echo "all_dates=$(printf '%s\n' "${all_dates[@]}" | jq -R . | jq -c -s '@json')" >>$GITHUB_OUTPUT
+          echo "dates=$(printf '%s\n' "${dates[@]}" | jq -R . | jq -c -s '@json')" >>$GITHUB_OUTPUT
+          echo "files=$(printf '%s\n' "${files[@]}" | jq -R . | jq -c -s '@json')" >>$GITHUB_OUTPUT
 
           VIDEO_TITLE=${VIDEO_TITLE//"{date_start}"/$start_date}
           VIDEO_TITLE=${VIDEO_TITLE//"{date_end}"/$end_date}
@@ -227,6 +202,7 @@ jobs:
           echo "is_workflow_call=${IS_WORKFLOW_CALL}" >>$GITHUB_OUTPUT
           echo "is_scheduled_daily=${IS_SCHEDULED_DAILY}" >>$GITHUB_OUTPUT
           echo "is_scheduled_weekly=${IS_SCHEDULED_WEEKLY}" >>$GITHUB_OUTPUT
+
       - id: cache
         name: "Cache Assets"
         uses: actions/cache@v3
@@ -255,23 +231,22 @@ jobs:
       - id: generate
         name: Generate Timelapse
         env:
+          all_dates: ${{ steps.collect.outputs.all_dates }}
           start_date: ${{ steps.collect.outputs.start_date }}
           end_date: ${{ steps.collect.outputs.end_date }}
-          timeframe: ${{ steps.collect.outputs.timeframe }}
           date_range: ${{ steps.collect.outputs.date_range }}
-          title: ${{ steps.collect.outputs.title }}
+          timeframe: ${{ steps.collect.outputs.timeframe }}
+          title: ${{ env.VIDEO_TITLE || steps.collect.outputs.title }}
+          description: ${{ env.VIDEO_DESCRIPTION || steps.collect.outputs.description }}
           path: ${{ steps.collect.outputs.path }}
-          description: ${{ steps.collect.outputs.description }}
-          filename: ${{ steps.collect.outputs.filename }}
-          files: ${{ steps.collect.outputs.files }}
-          dates: ${{ steps.collect.outputs.dates }}
-          all_dates: ${{ steps.collect.outputs.all_dates }}
+          VIDEO_FILENAME: ${{ env.VIDEO_FILENAME || steps.collect.outputs.filename }}
           VIDEO_FPS: ${{ env.VIDEO_FPS || inputs.video_fps }}
           VIDEO_CODEC: ${{ env.VIDEO_CODEC || inputs.video_codec }}
           VIDEO_SIZE: ${{ env.VIDEO_SIZE || inputs.video_size }}
           VIDEO_FORMAT: ${{ env.VIDEO_FORMAT || inputs.video_format }}
-          VIDEO_DATES: ${{ steps.collect.outputs.dates }}
-          VIDEO_FILES: ${{ steps.collect.outputs.files }}
+          VIDEO_DATES: ${{ env.VIDEO_DATES || steps.collect.outputs.dates }}
+          VIDEO_FILES: ${{ env.VIDEO_FILES || steps.collect.outputs.files }}
+          RUNNER_TEMP: ${{ runner.temp }}
         run: |
           TIMELAPSE_DIR="$(mktemp -d -t timelapse-XXXXXXXXXX)"
           VIDEO_DATES=($(jq -r 'fromjson | .[]' <<<"$VIDEO_DATES"))
@@ -294,23 +269,67 @@ jobs:
           echo "description=${VIDEO_DESCRIPTION:-}" >>$GITHUB_OUTPUT
           echo "filename=${VIDEO_FILENAME:-}" >>$GITHUB_OUTPUT
 
+          MAX_FPS=30
           VIDEO_FPS=${VIDEO_FPS:-5}
+          VIDEO_R=$((VIDEO_FPS * 2))
+          if ((VIDEO_FPS > MAX_FPS)); then
+            VIDEO_FPS=$MAX_FPS
+            VIDEO_R=$MAX_FPS
+          elif ((VIDEO_FPS < 1)); then
+            VIDEO_FPS=1
+            VIDEO_R=1
+          fi
 
-          echo "⏱️ Generating timelapse video... 🎬"
-          echo "📸 Image Count: ${#files[@]} from ${#dates[@]} days"
-          echo "📅 Image Dates: ${VIDEO_START_DATE:-} - ${VIDEO_END_DATE:-}"
-          echo "📝 Video Title: ${VIDEO_TITLE:-}"
-          echo "ℹ️ Description: ${VIDEO_DESCRIPTION:-}"
-          echo "📎 Output File: ${VIDEO_FILENAME:-}"
+          DEBUG_LOG="debug_log_$(date +%Y-%m-%d)_${RANDOM}.log"
+          echo "debug_log=${DEBUG_LOG-}" >>$GITHUB_OUTPUT
+          DEBUG_LOG="${RUNNER_TEMP}/${DEBUG_LOG}"
+          touch "$DEBUG_LOG"
+          cat >> "$DEBUG_LOG" <<__EOF_1
+            📸 Image Count:
+                ${#VIDEO_FILES[@]} from ${#VIDEO_DATES[@]} days
+            📅 Image Dates:
+                ${VIDEO_START_DATE:-} - ${VIDEO_END_DATE:-}
+            📝 Video Title:
+                ${VIDEO_TITLE:-}
+            ℹ️ Description:
+                ${VIDEO_DESCRIPTION:-}
+            📎 Output File:
+                ${VIDEO_FILENAME:-}
+            🌳 Branch Name:
+                ${BRANCH_NAME:-}
+
+            🏁 Flags Used:
+                -framerate ${VIDEO_FPS}
+                -pattern_type glob
+                -i "${TIMELAPSE_DIR-}/*/*.jpg"
+                -s "${VIDEO_SIZE:-"1024x768"}"
+                -vcodec ${VIDEO_CODEC:-"libx264"}
+                -vf "${VIDEO_FORMAT:-"scale=-2:1080,format=yuv420p"}"
+                -r $((VIDEO_FPS * 2))
+                -an
+                -tune film
+                -movflags +faststart
+                -metadata title="${title:-}"
+                -metadata description="${description:-}"
+                -metadata year="$(date +%Y)"
+                -metadata date="$(date +%Y-%m-%d)"
+                -metadata comment="Generated by github.com/${GITHUB_REPOSITORY:-nberlette/f1}"
+                "${OUTPUT_PATH:-}" 2>&1
+
+            ------------------------------------------------------------------
+              FFMPEG OUTPUT
+            ------------------------------------------------------------------
+
+          __EOF_1
 
           ffmpeg \
-            -framerate ${VIDEO_FPS} \
+            -framerate $VIDEO_FPS \
             -pattern_type glob \
             -i "${TIMELAPSE_DIR-}/*/*.jpg" \
             -s "${VIDEO_SIZE:-"1024x768"}" \
             -vcodec ${VIDEO_CODEC:-"libx264"} \
             -vf "${VIDEO_FORMAT:-"scale=-2:1080,format=yuv420p"}" \
-            -r $((VIDEO_FPS * 2)) \
+            -r $VIDEO_R \
             -an \
             -tune film \
             -movflags +faststart \
@@ -319,9 +338,10 @@ jobs:
             -metadata year="$(date +%Y)" \
             -metadata date="$(date +%Y-%m-%d)" \
             -metadata comment="Generated by github.com/${GITHUB_REPOSITORY:-nberlette/f1}" \
-            "${OUTPUT_PATH:-}"
+            "${OUTPUT_PATH:-}" 2>&1 | tee -a "$DEBUG_LOG"
 
-      - name: Upload Artifact
+      - if: success()
+        name: Upload Artifact
         uses: actions/upload-artifact@v3
         continue-on-error: true
         env:
@@ -331,66 +351,72 @@ jobs:
           path: ${{ env.OUTPUT_PATH }}
           name: ${{ env.VIDEO_FILENAME }}
 
-      - name: Commit and Push
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OUTPUT_PATH: ${{ steps.generate.outputs.path }}
-          VIDEO_TITLE: ${{ steps.generate.outputs.title }}
-          START_DATE: ${{ steps.collect.outputs.start_date }}
-          END_DATE: ${{ steps.collect.outputs.end_date }}
-          TIMEFRAME: ${{ steps.collect.outputs.timeframe }}
+      - if: always() && inputs.create_pr == 'true'
+        id: create_pr
+        name: "Commit + Create Pull Request"
         run: |
-          # create a new branch for our timelapse
-          BRANCH_NAME="timelapse/${VIDEO_START_DATE}${VIDEO_END_DATE:+"_${VIDEO_END_DATE}"}"
+          OUTPUT_PATH=${{ steps.generate.outputs.path }}
+          VIDEO_TITLE=${{ steps.generate.outputs.title }}
+          START_DATE=${{ steps.collect.outputs.start_date }}
+          END_DATE=${{ steps.collect.outputs.end_date }}
+          TIMEFRAME=${{ steps.collect.outputs.timeframe }}
+          BRANCH_NAME="timelapse/${START_DATE}${END_DATE:+_${END_DATE}}"
 
-          COMMIT_BODY=$'Video Details:\n\n'
-          COMMIT_BODY+="| Label           | %-56s |"$'\n'
-          COMMIT_BODY+="| :-------------- | $(printf '%-56s' ":" | tr ' ' '-') |"$'\n'
-          COMMIT_BODY+="| **Title**       | %-56s |"$'\n'
-          COMMIT_BODY+="| **Description** | %-56s |"$'\n'
-          COMMIT_BODY+="| **Filename**    | %-56s |"$'\n'
-          COMMIT_BODY+="| **Start Date**  | %-56s |"$'\n'
-          COMMIT_BODY+="| **End Date**    | %-56s |"$'\n'
-          COMMIT_BODY+="| **Timeframe**   | %-56s |"$'\n'
-          COMMIT_BODY+="| **Video Size**  | %-56s |"$'\n'
-          COMMIT_BODY+="| **Video FPS**   | %-56s |"$'\n'
-          COMMIT_BODY+="| **Video Codec** | %-56s |"$'\n'
-          COMMIT_BODY+="| **Video Flags** | %-56s |"$'\n'
-          COMMIT_BODY+="| **Preset**      | %-56s |"$'\n'
-          COMMIT_BODY="$(
-            printf "${COMMIT_BODY}\n\n" \
-              "Value" \
-              "${VIDEO_TITLE:-}" \
-              "${VIDEO_DESCRIPTION:-}" \
-              "${VIDEO_FILENAME:-}" \
-              "${VIDEO_START_DATE:-}" \
-              "${VIDEO_END_DATE:-}" \
-              "${VIDEO_TIMEFRAME:-}" \
-              "${VIDEO_SIZE:-}" \
-              "${VIDEO_FPS:-}" \
-              "${VIDEO_CODEC:-}" \
-              "${VIDEO_FORMAT:-}" \
-              "${VIDEO_PRESET:-}"
+          COMMIT_BODY=""
+          COMMIT_BODY+=$(printf "| Label           | %-56s |\n" "Value")
+          COMMIT_BODY+=$(printf "| :-------------- | %-56s |\n" "$(printf '%-56s' ":" | tr ' ' '-')")
+          COMMIT_BODY+=$(printf "| **Title**       | %-56s |\n" "$VIDEO_TITLE")
+          COMMIT_BODY+=$(printf "| **Start Date**  | %-56s |\n" "$START_DATE")
+          COMMIT_BODY+=$(printf "| **End Date**    | %-56s |\n" "$END_DATE")
+          COMMIT_BODY+=$(printf "| **Timeframe**   | %-56s |\n" "$TIMEFRAME")
+          COMMIT_BODY+=$(printf "| **Video Size**  | %-56s |\n" "$VIDEO_SIZE")
+          COMMIT_BODY+=$(printf "| **Video FPS**   | %-56s |\n" "$VIDEO_FPS")
+          COMMIT_BODY+=$(printf "| **Video Codec** | %-56s |\n" "$VIDEO_CODEC")
+          COMMIT_BODY+=$(printf "| **Video Flags** | %-56s |\n" "$VIDEO_FORMAT")
+          COMMIT_MSG="$(
+            printf \
+              "feat: 🎬 new timelapse for %s\n\nVideo Details:\n\n$%s" \
+              "${VIDEO_START_DATE}${VIDEO_END_DATE:+" - ${VIDEO_END_DATE}" \
+              "$COMMIT_BODY"
           )"
+          git checkout -b "$BRANCH_NAME"
+          git add --sparse "$OUTPUT_PATH"
+          git commit -m "$COMMIT_MSG"
+          git push --set-upstream origin "$BRANCH_NAME"
 
-          # create a new branch, commit, and push
-          git checkout -b "${BRANCH_NAME}"
-          git add --sparse "${OUTPUT_PATH}"
-          git commit -m "feat: 🎬 new timelapse for ${VIDEO_START_DATE-}"$'\n\n'"${COMMIT_BODY-}"
-          git push --set-upstream origin "${BRANCH_NAME}"
-
-
-          # create the pull request body
           VIDEO_URL="https://github.com/${GITHUB_REPOSITORY}/raw/${BRANCH_NAME}/${OUTPUT_PATH}"
-          PR_BODY=$'## 📝 Video Details\n\n%s\n'
-          PR_BODY+=$'## 📺 Preview the video below!\n\n[![%s](%s)](%s)\n\n'
-          PR_BODY+=$'---\n\nHey @%s 👋 please review and merge this PR when ready!\n\n'
-          PR_BODY+=$'- 🤖 The F1 Bot\n\n'
-          PR_BODY+="> **Note**: if this automated PR is incorrect, please open an issue."$'\n\n'
-          PR_BODY="$(printf "${PR_BODY}" "${COMMIT_BODY}" "${GITHUB_ACTOR}" "${VIDEO_TITLE}" "${VIDEO_URL}" "${VIDEO_URL}")"
+          PR_BODY=$(printf "## 📝 Video Details\n\n%s\n\n" "$COMMIT_BODY")
+          PR_BODY+=$(printf "## 📺 Download the full video\n\n- [x] [%s](%s)\n\n---\n\n" "$VIDEO_TITLE" "$VIDEO_URL")
+          PR_BODY+="👋 Project maintainers, please review and merge this PR when ready!"
+          PR_BODY+=$'\n- 🤖 The F1 Bot\n\n'
+          PR_BODY+="> **Note**: if this automated PR is incorrect, please open an issue."
 
-          PR_TITLE=""
-          printf -v PR_TITLE '🎬 New Timelapse for %s (%d days)' "${VIDEO_START_DATE}${VIDEO_END_DATE:+" - ${VIDEO_END_DATE}"}" "${VIDEO_TIMEFRAME}"
+          PR_TITLE=$(printf '🎬 New Timelapse for %s (%d days)' "$START_DATE${END_DATE:+ - $END_DATE}" "$TIMEFRAME")
+          PR_PROJECT="Timelapse"
+          PR_LABELS=(assets automated timelapse)
+          ALL_LABELS=($(gh label list --json name --jq '.[].name'))
+          for label in "${PR_LABELS[@]}"; do
+            if [[ ! " ${ALL_LABELS[@]} " =~ " ${label} " ]]; then
+              # create a hex color code for the label (deterministic based on the label name)
+              label_color=$(echo -n "$label" | md5sum | cut -c1-6)
+              gh label create "$label" -c "#${label_color}"
+            fi
+          done
 
-          # open the pull request using the github cli
-          gh pr create --title "${PR_TITLE}" -b "${PR_BODY}" -l timelapse,assets,automated -r "${GITHUB_ACTOR}" -a "${GITHUB_ACTOR}" -B main -H "${BRANCH_NAME}"
+          gh pr create \
+            -B "main" \
+            -t "$PR_TITLE" \
+            -b "$PR_BODY" \
+            -l "${PR_LABELS}$(printf ',%s' "${PR_LABELS[@]:1}" \
+            -r "$GITHUB_ACTOR" \
+            -a "$GITHUB_ACTOR"
+
+      - if: always() && env.DEBUG_LOG
+        name: Upload Debug Log
+        uses: actions/upload-artifact@v3
+        continue-on-error: true
+        env:
+          DEBUG_LOG: ${{ steps.generate.outputs.debug_log }}
+        with:
+          path: ${{ runner.temp }}/${{ env.DEBUG_LOG }}
+          name: ${{ env.DEBUG_LOG }}
