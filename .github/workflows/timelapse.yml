@@ -352,13 +352,14 @@ jobs:
 
       - id: create_pr
         name: "Create Pull Request"
+        env:
+          OUTPUT_PATH: ${{ steps.generate.outputs.path }}
+          VIDEO_TITLE: ${{ steps.generate.outputs.title }}
+          START_DATE: ${{ steps.collect.outputs.start_date }}
+          END_DATE: ${{ steps.collect.outputs.end_date }}
+          TIMEFRAME: ${{ steps.collect.outputs.timeframe }}
         run: |
           if [ -n "$CREATE_PR" ] && [[ "$CREATE_PR" != "false" ]]; then
-            OUTPUT_PATH=${{ steps.generate.outputs.path }}
-            VIDEO_TITLE=${{ steps.generate.outputs.title }}
-            START_DATE=${{ steps.collect.outputs.start_date }}
-            END_DATE=${{ steps.collect.outputs.end_date }}
-            TIMEFRAME=${{ steps.collect.outputs.timeframe }}
             BRANCH_NAME="timelapse/${START_DATE}${END_DATE:+_${END_DATE}}"
   
             COMMIT_BODY=""
