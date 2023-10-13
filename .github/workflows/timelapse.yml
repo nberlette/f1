@@ -352,13 +352,13 @@ jobs:
 
       - id: create_pr
         name: "Create Pull Request"
-        env:
-          OUTPUT_PATH: ${{ steps.generate.outputs.path }}
-          VIDEO_TITLE: ${{ steps.generate.outputs.title }}
-          START_DATE: ${{ steps.collect.outputs.start_date }}
-          END_DATE: ${{ steps.collect.outputs.end_date }}
-          TIMEFRAME: ${{ steps.collect.outputs.timeframe }}
         run: |
+          OUTPUT_PATH=${{ toJson(steps.generate.outputs.path) }}
+          VIDEO_TITLE=${{ toJson(teps.generate.outputs.title) }}
+          START_DATE=${{ toJson(steps.collect.outputs.start_date) }}
+          END_DATE=${{ toJson(steps.collect.outputs.end_date) }}
+          TIMEFRAME=${{ steps.collect.outputs.timeframe }}
+          
           if [ -n "$CREATE_PR" ] && [[ "$CREATE_PR" != "false" ]]; then
             BRANCH_NAME="timelapse/${START_DATE}${END_DATE:+_${END_DATE}}"
   
@@ -376,7 +376,7 @@ jobs:
             COMMIT_MSG="$(
               printf \
                 "feat: 🎬 new timelapse for %s\n\nVideo Details:\n\n$%s" \
-                "${VIDEO_START_DATE}${VIDEO_END_DATE:+" - ${VIDEO_END_DATE}" \
+                "$START_DATE${END_DATE:+" - ${END_DATE}" \
                 "$COMMIT_BODY"
             )"
             git checkout -b "$BRANCH_NAME"
@@ -407,7 +407,7 @@ jobs:
               -B "main" \
               -t "$PR_TITLE" \
               -b "$PR_BODY" \
-              -l "${PR_LABELS}$(printf ',%s' "${PR_LABELS[@]:1}" \
+              -l "$PR_LABELS$(printf ',%s' "${PR_LABELS[@]:1}" \
               -r "$GITHUB_ACTOR" \
               -a "$GITHUB_ACTOR"
           else
