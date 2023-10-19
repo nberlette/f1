@@ -353,21 +353,24 @@ export class Image {
 
   /** Converts an image's path to a date object. */
   static pathToDate(path: string | URL, latest?: boolean): Date {
-    const dir = $path.basename($path.dirname(path.toString()), ".jpg");
-    const name = $path.basename(path.toString());
+    const date = $path.basename($path.dirname(path.toString()));
+    const time = $path.basename(path.toString()).replace(/_/g, ":")
 
-    if (!dir || !name) {
+    if (!date || !time) {
       throw new Error(
-        `Invalid image path. The path must contain a minimum of a date-named folder and a time-named file, separated by a forward slash, like so: \`2023-07-09/12_34_56.jpg\`\n\nPath received: ${path} (${typeof path})`,
+        "Invalid image path. The path must contain a minimum of a date-named folder and " + 
+        "a time-named file, separated by a forward slash, like so: `2023-07-09/12_34_56.jpg`\n\n" +
+        `Path received: ${path} (${typeof path})`,
       );
     }
+    
+    const datetime = new Date(`${date}T${name.replace(/_/g, ":").replace(/\.jpe?g$/i, "Z")}`);
+    
+    if (latest || time === Image.latestImageName) {
+      datetime.setTime(Date.now());
+    }
 
-    const time = name.replace(/_/g, ":");
-    const date = time === Image.latestImageName || latest === true
-      ? new Date()
-      : new Date(`${dir}T${time.replace(/\.jpe?g$/, "")}Z`);
-
-    return date;
+    return datetime;
   }
 
   static async fromData(
@@ -378,9 +381,8 @@ export class Image {
   ): Promise<Image> {
     const hash = Image.hash(data, "hex");
     const cached = await Image.getDateForHash(hash);
-    if (cached && !latest) {
-      return new Image(cached, data, parent, latest);
-    } else if (!latest) {
+    if (!latest) {
+      if (cached) return new Image(cached, data, parent, latest);
       await kv.set([...Image.hashTablePrefix, hash], date);
     }
     return new Image(date, data, parent, latest);
@@ -464,15 +466,19 @@ export class Image {
     }
   > {
     const key = Image.formatHashTableKey(hash);
+    // atomic check ensures no entry already exists for this image hash
     const res = await kv.atomic().check({ key, versionstamp: null }).set(
       key,
       date,
     ).commit();
 
-    const { ok = false, versionstamp = null } = { versionstamp: null, ...res };
+    const { ok = false, versionstamp } = { versionstamp: null, ...res };
 
-    if (ok && versionstamp) return { key, ok, versionstamp } as const;
-    return { key, ok: false, versionstamp: null } as const;
+    if (ok && versionstamp !== null) {
+      return { key, ok, versionstamp } as const;
+    } else {
+      return { key, ok, versionstamp } as const;
+    }
   }
 
   private static formatHashTableKey(hash: string | number[] | ArrayBuffer) {
@@ -481,16 +487,16 @@ export class Image {
     return [...Image.hashTablePrefix, hash];
   }
 
-  private static hash(
+  static hash(
     data: BufferSource | Image,
     digest?: "hex" | undefined,
   ): string;
-  private static hash(data: BufferSource | Image, digest: "array"): number[];
-  private static hash(
+  static hash(data: BufferSource | Image, digest: "array"): number[];
+  static hash(
     data: BufferSource | Image,
     digest: "buffer",
   ): ArrayBuffer;
-  private static hash(data: BufferSource | Image, digest?: string) {
+  static hash(data: BufferSource | Image, digest?: string) {
     const sha = new Sha256(/* is224 */ false, /* isSharedMemory */ false);
     const buffer = data instanceof Image || ArrayBuffer.isView(data)
       ? data.buffer?.slice(0)
