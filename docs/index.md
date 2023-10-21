@@ -206,7 +206,7 @@ The latest image is always saved as [`./assets/latest.jpg`][latest-img] for easy
 
 ---
 
-<br><h4 style="text-align:center"><a href="https://nick.mit-license.org" rel="noopener nofollow" target="_blank" title="MIT © Nicholas Berlette"><strong>MIT</strong></a> © <a href="https://github.com/nberlette" rel="noopener nofollow" target="_blank" title="Nicholas Berlette's Profile on GitHub"><strong>Nicholas Berlette</strong></a> · <small><em>Made with ♥️ in Las Vegas, NV</em></small></h4><br>
+<br><h4><a href="https://nick.mit-license.org" rel="noopener nofollow" target="_blank" title="MIT © Nicholas Berlette"><strong>MIT</strong></a> © <a href="https://github.com/nberlette" rel="noopener nofollow" target="_blank" title="Nicholas Berlette's Profile on GitHub"><strong>Nicholas Berlette</strong></a> · <small><em>Made with ♥️ in Las Vegas, NV</em></small></h4><br>
 
 <br>
 
