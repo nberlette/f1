@@ -63,19 +63,19 @@ from the official Formula 1 website.
 ### Tools Used
 
 - [x] [`Deno v1.37.2`][Deno v1.37.2]
-- <small>Rust-based JS runtime, sandboxed, with great TS/TSX support.</small>
-- <small>Provides the tools for network and file system operations.</small>
+  - <small>Rust-based JS runtime, sandboxed, with great TS/TSX support.</small>
+  - <small>Provides the tools for network and file system operations.</small>
 - [x] [`TypeScript 5.2.2`][TypeScript]
-- <small>Superset of JavaScript featuring advanced static typechecking.</small>
-- <small>Better type safety means more readable and maintainable code.</small>
+  - <small>Superset of JavaScript featuring advanced static typechecking.</small>
+  - <small>Better type safety means more readable and maintainable code.</small>
 - [x] [`GitHub Actions`][GitHub Actions]
-- <small>Provides **free** macOS virtual machines powering the scraper.</small>
-- <small>Responsible for scheduled execution of the scraper [workflow]</small>
-- <small>Temporarily stores the image [artifacts](#workflow-artifacts)</small>
+  - <small>Provides **free** macOS virtual machines powering the scraper.</small>
+  - <small>Responsible for scheduled execution of the scraper [workflow]</small>
+  - <small>Temporarily stores the image [artifacts](#workflow-artifacts)</small>
 - [x] [`Deno KV`][Deno KV Docs] <small> _(currently in beta)_</small>
-- <small>Provides us with global data persistence and caching</small>
+  - <small>Provides us with global data persistence and caching</small>
 - [x] [`ffmpeg`][ffmpeg] <small> _(timelapse feature is **unstable**)_</small>
-- <small>Leveraged to automatically generate timelapse videos</small>
+  - <small>Leveraged to automatically generate timelapse videos</small>
 
 ---
 
