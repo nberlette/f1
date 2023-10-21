@@ -1,12 +1,14 @@
-# 🏎️ @nberlette/f1 <img align=right src ="https://img.shields.io/github/actions/workflow/status/nberlette/f1/main.yml?label=Scrape%20Images%20&logo=github&style=for-the-badge&color=blue" />
+# 🏎️ @nberlette/f1 <img align=right src="https://img.shields.io/github/actions/workflow/status/nberlette/f1/main.yml?label=Scrape%20Images%20&logo=github&style=for-the-badge&color=blue" />
 
-## Scraping photos of the Las Vegas Formula 1 track's construction
+## Scraping photos of the Las Vegas Formula 1 track construction
 
 This is an autonomous image scraper developed using [TypeScript], [Deno], and
 [GitHub Actions]. It was purpose-built to document the historic [Formula 1][formula1]
 track construction in [Las Vegas, Nevada][formula1-official-site], slated to host the
 inaugural Heineken Silver Grand Prix on November 18th. The images will be stitched
-together to form timelapse videos of the track's lifecycle.
+together into timelapse videos of the track's lifecycle, from _start_ to _finish_ 🏁.
+
+<div align="center">
 
 #### Track Details and Statistics
 
@@ -14,11 +16,9 @@ together to form timelapse videos of the track's lifecycle.
 | ------------------- | ------------------- | ------- | --------- | --------- |
 | 212 mph • 342 km/h  | 3.8 miles • 6.12 km | 17      | 3         | 2         |
 
-<div align="center">
-
 ---
 
-[📸 **Latest Snapshot**][latest-snapshot] · [🗓️ **Previous Snapshots**][previous-snapshots] · [🌟 **Star on GitHub**][Star on GitHub] · ℹ️ [**More Information**][about]
+[📸 **Latest**][latest-snapshot] • [🎬 **Timelapse**][timelapse-preview] • [🗓️ **Previous Images**][previous-snapshots] • ℹ️ [**Project Details**][about] • [🌟 **Star It!**][Star on GitHub]
 
 ---
 
@@ -26,23 +26,35 @@ together to form timelapse videos of the track's lifecycle.
 
 <a href="https://github.com/nberlette/f1/blob/main/assets/latest.jpg?raw=true" title="The latest image scraped from the Formula 1 track build in Las Vegas"><img src="https://github.com/nberlette/f1/blob/main/assets/latest.jpg?raw=true" alt="The latest image scraped from the Formula 1 track build in Las Vegas" style="border-radius:8px" /></a>
 
+---
+
+## Timelapse Preview
+
+https://github.com/nberlette/f1/assets/11234104/1028d045-3561-408c-9bf0-512249804472
+
 </div>
+
+> **Note**: this video was created with images from **2023-08-15** - **2023-10-12**
 
 ---
 
 ## About
 
-The first scrape happened on June 3rd, 2023. As of October 1st, it has amassed
-**over 16,000 photos** from **_two_ build sites**, equivalent to over **1.0GB**
-of input material for the timelapse process.
+The first scrape happened on June 3rd, 2023. As of October 18th it has surpassed
+**18,500 commits**, equivalent to over **1.2GB** of image data. Photos are stored
+in the `./assets` folder of this repository, and also persisted to a **[Deno KV]** 
+database backed by [FoundationDB].
 
-The photos are stored in the public [**GitHub Repository**][readme], thanks to
-GitHub's wonderful free storage for open source projects. They're also persisted
-to a [FoundationDB]-backed [**Deno KV** database][Deno KV].
+The origin of the scraped images is an real-time photo feed, sourced directly
+from the official Formula 1 website.
+
+> ⚠️ This project is for educational purposes and is not affiliated with Formula 1.
+
+#### [📖 **Click here for an in-depth explanation of the scrape process**](#scrape-process-step-by-step)
 
 ### Tools Used
 
-- [x] [`Deno v1.37.1`][Deno v1.37.1]
+- [x] [`Deno v1.37.2`][Deno v1.37.2]
 - <small>Rust-based JS runtime, sandboxed, with great TS/TSX support.</small>
 - <small>Provides the tools for network and file system operations.</small>
 - [x] [`TypeScript 5.2.2`][TypeScript]
@@ -54,39 +66,114 @@ to a [FoundationDB]-backed [**Deno KV** database][Deno KV].
 - <small>Temporarily stores the image [artifacts](#workflow-artifacts)</small>
 - [x] [`Deno KV`][Deno KV Docs] <small> _(currently in beta)_</small>
 - <small>Provides us with global data persistence and caching</small>
-- [x] [`ffmpeg`][ffmpeg] <small> _(timelapse feature coming soon)_</small>
-- <small>Leveraged by GitHub Actions to compile timelapse videos</small>
-
-### Image Source
-
-The data source on the scraped images is an updating live photo feed sourced
-from the official Formula 1 website. As long as it remains up and transmitting
-data, this project will continue to auto-update.
-
-### Who made this?
-
-This project is maintained by [**Nicholas Berlette**][nberlette], developed as
-an [**open source project**][readme] using [**TypeScript**][typescript], [**Deno**][deno],
-[**Deno KV**][Deno KV], and [**GitHub Actions**][GitHub Actions].
-
-> ⚠️ This non-commercial project is for educational purposes only.
+- [x] [`ffmpeg`][ffmpeg] <small> _(timelapse feature is **unstable**)_</small>
+- <small>Leveraged to automatically generate timelapse videos</small>
 
 ---
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/img/f1_artwork_1.png">
+  <img alt="AI-generated artwork of a Formula 1 car racing down the Las Vegas Strip" src="./docs/img/f1_artwork_2.png">
+</picture>
+
+> AI-generated F1 art created with [SDXL 1.0][sdxl] and the prompt
+> `"Formula 1 cars on the Las Vegas Strip"`
+
+---
+
+## How it Works
+
+The majority of the work happens in [`main.ts`][main.ts], despite it only being
+3 lines of code. It is responsible for invoking the scraper located in
+[`src/scrape.ts`][src-scrape.ts], and is ran every 10 minutes by a GitHub Action
+defined by the workflow in [`main.yml`][workflow].
+
+### Assets and Data
+
+Images are named after their capture time as a `JPEG` file in **UTC**. For
+example, an image captured at `2023-07-09T04:28:57` would be saved as
+[`./assets/2023-07-09/04_28_57.jpg`](https://github.com/nberlette/f1/blob/main/assets/2023-07-09/04_28_57.jpg?raw=true).
+The latest image is always saved as [`./assets/latest.jpg`][latest-img] for easy access.
+
+### Scrape Process, Step-by-Step
+
+1. GitHub Actions runs the [scrape workflow][workflow] every ~10 minutes, depending on traffic.
+2. The runner checks out the repo, installs [Deno][deno], and prepares to scrape.
+3. `deno task scrape` is executed, which runs the [`main.ts`][main.ts] file.
+4. [`main.ts`][main.ts] imports [`scrape()`][function-scrape] from [`src/scrape.ts`][src-scrape.ts],
+   which defines two inner functions, [**`read`**][function-read] and [**`write`**][function-write].
+   - Once it has checked that `import.meta.main` is set, the following steps are taken:
+   1. 🔍 **READ**: [`read()`][function-read] is called with [`IMAGE_URL`][const-image-url].
+      - Internally, the [Fetch API] is used to download the image.  
+        If the request fails, it will be retried up to [`ATTEMPTS`][const-attempts]
+        times, with a short pause between each successive attempt.
+      - If all attempts are exhausted without success, the run will **terminate**.
+      - Otherwise, a new instance of the [`Image`][src-image.ts] class is returned.
+   2. 💾 **WRITE**: [`write()`][function-write] is called, with the [`Image`][src-image.ts]
+      as its only argument. Before writing, however, it runs through some checks:
+      1. The [`Image.hash`][image-hash] is checked against the hash "table" in [Deno KV].  
+         If an entry exists, the image is stale and won't make it any further. If Deno KV
+         is unavailable, the image data is checked against [`latest.jpg`][latest-img] via
+         a timing-safe equality comparison, avoiding exposure to timing-based attacks.
+         - If they are equal, the image has not updated at the origin. The process
+           starts over at **step 4** and repeats until a new image is found.
+         - If the maximum number of [`ATTEMPTS`][const-attempts] is reached and
+           no new image was found, the job **terminates unsuccessfully**.
+      2. If we've made it this far, we have a fresh image and we need to store it.
+         - [`Image.write()`][image-write] persists the image to [Deno KV].
+            > The key is generated by the `Image` API, using the image timestamp.
+         - The image timestamp is indexed with its unique SHA-256 hash in [Deno KV].  
+            > This prevents later scrapes from duplicating this image. It also means 
+            > if you try to instantiate a new Image from an old hash, it will always
+            > return the original image and its original timestamp.
+         - [`Image.writeFile()`][image-writefile] saves it to the local file system.
+            > The filename is generated by the `Image` API, using the image timestamp.
+         - `Image.writeFile()` also saves it to [`./assets/latest.jpg`][latest-img],
+      3. The [`setOutput`][src-helpers-actions.ts] helper pipes the image metadata
+         to the GitHub Actions runner, to be used in the commit step.
+   3. The scrape is now complete and the runner proceeds to the final steps.
+6. The photo is stored as a workflow artifact for **90 days**.
+7. 🤝 All changes are committed + pushed to the repository.
+8. 🏁 The job finishes successfully and the runner is terminated. Hooray!
+
+---
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/img/f1_artwork_4.png">
+  <img alt="AI-generated artwork of a Formula 1 car racing down the Las Vegas Strip" src="./docs/img/f1_artwork_3.png">
+</picture>
+
+---
+
 
 ## Previous Snapshots
 
 <table>
 <thead>
-  <th>October 6th</th>
+  <th>October 17th</th>
+  <th>October 15th</th>
+  <th>October 13th</th>
+  <th>October 11th</th>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-17/20_26_59.jpg?raw=true" title="2023-10-17T20:26:59" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-17/20_26_59.jpg?raw=true" alt="2023-10-17T20:26:59" style="border-radius:8px" /></a></td>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-15/21_38_24.jpg?raw=true" title="2023-10-15T21:38:24" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-15/21_38_24.jpg?raw=true" alt="2023-10-15T21:38:24" style="border-radius:8px" /></a></td>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-13/23_52_14.jpg?raw=true" title="2023-10-13T23:52:14" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-13/23_52_14.jpg?raw=true" alt="2023-10-13T23:52:14" style="border-radius:8px" /></a></td>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-11/21_26_47.jpg?raw=true" title="2023-10-11T21:26:47" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-11/21_26_47.jpg?raw=true" alt="2023-10-11T21:26:47" style="border-radius:8px" /></a></td>
+</tr>
+</tbody>
+<thead>
+  <th>October 9th</th>
+  <th>October 7th</th>
   <th>October 5th</th>
-  <th>October 4th</th>
   <th>October 3rd</th>
 </thead>
 <tbody>
 <tr>
-<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-06/22_19_08.jpg?raw=true" title="2023-10-06T22:19:08" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-06/22_19_08.jpg?raw=true" alt="2023-10-06T22:19:08a"style="border-radius:8px" /></a></td>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-09/22_27_19.jpg?raw=true" title="2023-10-09T22:27:19" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-09/22_27_19.jpg?raw=true" alt="2023-10-09T22:27:19" style="border-radius:8px" /></a></td>
+<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-07/22_26_51.jpg?raw=true" title="2023-10-07T22:26:51" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-07/22_26_51.jpg?raw=true" alt="2023-10-07T22:26:51" style="border-radius:8px" /></a></td>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-05/22_19_31.jpg?raw=true" title="2023-10-05T22:19:31" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-05/22_19_31.jpg?raw=true" alt="2023-10-05T22:19:31" style="border-radius:8px" /></a></td>
-<td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-04/22_19_54.jpg?raw=true" title="2023-10-04T22:19:54" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-04/22_19_54.jpg?raw=true" alt="2023-10-04T22:19:54" style="border-radius:8px" /></a></td>
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-10-03/22_20_37.jpg?raw=true" title="2023-10-03T22:20:37" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-10-03/22_20_37.jpg?raw=true" alt="2023-10-03T22:20:37" style="border-radius:8px" /></a></td>
 </tr>
 </tbody>
@@ -120,135 +207,24 @@ an [**open source project**][readme] using [**TypeScript**][typescript], [**Deno
 </tbody>
 </table>
 
-## How it Works
-
-The majority of the work happens in [`main.ts`][main.ts], despite it only being
-3 lines of code. It is responsible for invoking the scraper located in
-[`src/scrape.ts`][src-scrape.ts], and is ran every 10 minutes by a GitHub Action
-defined by the workflow in [`main.yml`][workflow].
-
-[📖 **Click here for an in-depth explanation of the scrape process**](#scrape-process-step-by-step)
-
-### Assets and Data
-
-Images are named after their capture time as a `JPEG` file in **UTC**. For
-example, an image captured at `2023-07-09T04:28:57` would be saved as
-[`./assets/2023-07-09/04_28_57.jpg`](https://github.com/nberlette/f1/blob/main/assets/2023-07-09/04_28_57.jpg?raw=true).
-The latest image is always saved as [`./assets/latest.jpg`][latest-img] for easy
-access.
-
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/img/f1_artwork_4.png">
-  <img alt="AI-generated artwork of a Formula 1 car racing down the Las Vegas Strip" src="./docs/img/f1_artwork_3.png">
-</picture>
-
-## Scrape Process, Step-by-Step
-
-1. GitHub Actions runs the scrape workflow every ~10 minutes, depending on traffic.
-2. The runner checks out the repository and installs [Deno][deno].
-3. The command `deno task scrape` is run, invoking the [`main.ts`][main.ts]
-   file in the project root.
-4. [`main.ts`][main.ts] imports `scrape` and double-checks that it is only being run
-   as the main module. If so, it immediately calls [`scrape()`][src-scrape.ts], which
-   contains two inner functions, `read` and `write`. The following steps are taken:
-   1. [`read()`][src-scrape.ts] is called with [`IMAGE_URL`][src-constants.ts]
-      1. Internally the [Fetch API] is used to scrape the image source.
-      2. If the request fails, it will be retried up to the number of times
-         defined by [`ATTEMPTS`][src-constants.ts], pausing between each attempt.
-      3. If all attempts are exhausted without success, it will **terminate**.
-      4. If it succeeds, returns a new [`Image`][src-image.ts] instance.
-   2. [`write()`][src-scrape.ts] is called with the [`Image`][src-image.ts] instance
-      returned from step 1 as its only argument.
-      1. The image is compared for equality against the latest image, using a
-         timing-safe equality check to avoid exposure to timing-based attacks.
-         - If they are equal, the image has not updated at the origin. The scrape
-           will start over at **step 4** and repeat until a new image is found.
-         - If the maximum number of [`ATTEMPTS`][src-constants.ts] is reached and
-           no new image was found, the job will **terminate unsuccessfully**.
-      2. If we've made it this far, we have a fresh image and we need to store
-         it. It is written to `Deno KV` via [`Image.write()`][src-image.ts].
-      3. The image is written to a file by [`Image.writeFile()`][src-image.ts]
-         with our [naming conventions](#assets-and-data), and logged to `stdout`.
-      4. The image is written to [`./assets/latest.jpg`][latest-img], and the size
-         difference is logged to `stdout` and GitHub Actions Outputs.
-      5. The [`setOutput`][src-helpers-actions.ts] method is called with all of
-         the metadata for the image, so the runner can process it further.
-   3. The scrape is now complete and the runner proceeds to the next step.
-6. The photo is stored as a GitHub Workflow artifact for **90 days**.
-7. The changes are committed and pushed to the repository.
-8. The job completes and the runner is terminated **successfully**.
-
----
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/img/f1_artwork_1.png">
-  <img alt="AI-generated artwork of a Formula 1 car racing down the Las Vegas Strip" src="./docs/img/f1_artwork_2.png">
-</picture>
-
-> AI-generated F1 art created with [SDXL 1.0][sdxl] and the prompt
-> `"Formula 1 cars on the Las Vegas Strip"`
-
----
-
-## Further Reading
-
-### Camera Location
-
-The camera is at the "Harmon Paddock" zone of the track, located just southeast
-of _"The Strip"_ (Las Vegas Blvd) near Harmon Avenue and Koval Lane. The camera
-itself is mounted directly on the roof of the Paddock building, facing
-south-southeast. It gives a great view of the grandstands (bleachers) and what
-appears to be shaping up to be the start/finish line of the track.
-
-#### Camera Angle Changes
-
-Something which is completely out of my control is anything related to the
-actual camera itself. That being said, when the construction crew suddenly chose
-to relocate it on August 15th, it effectively split the timelapse part of this
-project into two parts.
-
-##### What changed?
-
-The camera **_was_** facing north-northwest, giving a bird-eye view of the
-Paddock area and the track's first corner, with the iconic Las Vegas Strip in
-the background. As of August 15th, however, the camera is now facing
-south-southeast towards the Harry Reid International Airport, with the MGM Grand
-in the background to the right.
-
-It's not all bad though - in my opinion, the new angle is far superior to the
-previous one, and it provides quite a bit more content for us since it's in an
-area with much more activity.
-
-##### What are we doing about it?
-
-The first angle will be made into a separate timelapse video, from June 3rd,
-2023 through August 15th, 2023. The second angle will be from August 15th, 2023
-through the completion of the track.
-
-### Future Plans
-
-A frontend display for viewing the images as a growing timelapse is under
-development. This will also help create a timelapse video once the track build
-is complete. Check [`n.berlette.com/f1`][n.berlette.com/f1] for updates.
-
 ---
 
 <footer align="center">
 
-#### [MIT] © [**Nicholas Berlette**][nberlette] • Made with ♥️ in Las Vegas, NV
+#### [MIT] © **[Nicholas Berlette]** • Made with ♥️ in Las Vegas, NV
 
-<small>This project is not affiliated with [Formula 1][formula1] and has no
-commercial interests.</small>
+<small>This project is not affiliated with [Formula 1] and is for educational purposes only.</small>
 
 </footer>
 
 <!-- Project Links -->
 
 [latest-snapshot]: #latest-snapshot "View the latest snapshot from the construction site"
+[timelapse-preview]: #timelapse-preview "View a short sample timelapse video, created from the last 8 weeks of photos."
 [previous-snapshots]: #previous-snapshots "View some of the previously captured snapshots"
 [about]: #about "Interested in how it works? Click here for more info!"
 [MIT]: https://nick.mit-license.org "MIT License"
+[Nicholas Berlette]: https://github.com/nberlette "Nicholas Berlette's GitHub profile"
 [nberlette]: https://github.com/nberlette "Nicholas Berlette's GitHub profile"
 [n.berlette.com/f1]: https://n.berlette.com/f1 "View the GitHub Pages site at n.berlette.com/f1"
 [Star on GitHub]: https://github.com/nberlette/f1/stargazers "Star this project on GitHub!"
@@ -260,7 +236,16 @@ commercial interests.</small>
 [src-helpers.ts]: https://github.com/nberlette/f1/blob/main/src/helpers.ts "View the source code for the 'src/helpers.ts' file on GitHub"
 [src-constants.ts]: https://github.com/nberlette/f1/blob/main/src/constants.ts "View the source code for the 'src/constants.ts' file on GitHub"
 [src-image.ts]: https://github.com/nberlette/f1/blob/main/src/image.ts "View the source code for the 'src/image.ts' file on GitHub"
+[image-hash]: https://github.com/nberlette/f1/blob/main/src/image.ts "View the source code for the 'src/image.ts' file on GitHub"
 [src-helpers-actions.ts]: https://github.com/nberlette/f1/blob/main/src/helpers/actions.ts "View the source code for the 'src/helpers/actions.ts' file on GitHub"
+[const-attempts]: https://github.com/nberlette/f1/blob/main/src/constants.ts#L37 "View the source for the 'ATTEMPTS' constant on GitHub"
+[const-delay]: https://github.com/nberlette/f1/blob/main/src/constants.ts#L30 "View the source for the 'DELAY' constant on GitHub"
+[const-image-url]: https://github.com/nberlette/f1/blob/main/src/constants.ts#L47 "View the source for the 'IMAGE_URL' constant on GitHub"
+[image-write]: https://github.com/nberlette/f1/blob/main/src/image.ts#L205 "View the source for the 'Image.write()' method on GitHub"
+[image-writefile]: https://github.com/nberlette/f1/blob/main/src/image.ts#L250 "View the source for the 'Image.writeFile()' method on GitHub"
+[function-scrape]: https://github.com/nberlette/f1/blob/main/src/scrape.ts#L30 "View the source for the 'scrape()' function on GitHub"
+[function-read]: https://github.com/nberlette/f1/blob/main/src/scrape.ts#L51 "View the source for the 'read()' function on GitHub"
+[function-write]: https://github.com/nberlette/f1/blob/main/src/scrape.ts#L96 "View the source for the 'write()' function on GitHub"
 [latest-img]: https://github.com/nberlette/f1/blob/main/assets/latest.jpg?raw=true&no-cache&cache=no-cache "The latest snapshot of the Formula 1 track construction site in Las Vegas, Nevada."
 [artwork-1]: ./docs/img/f1_artwork_1.png "AI-Generated artwork of a Formula 1 car racing down the Las Vegas Strip"
 [artwork-2]: ./docs/img/f1_artwork_2.png "AI-generated artwork of a Formula 1 car racing down the Las Vegas Strip"
@@ -274,6 +259,7 @@ commercial interests.</small>
 [sdxl]: https://github.com/Stability-AI/stablediffusion "Stable Diffusion XL 1.0"
 [ffmpeg]: https://ffmpeg.org "The FFmpeg Project Official Website"
 [Track Layout]: https://www.f1lasvegasgp.com/track-layout "Formula 1's Las Vegas Grand Prix Track Layout"
+[Formula 1]: https://www.formula1.com
 [formula1]: https://www.formula1.com/en/latest/article.las-vegas-to-host-formula-1-grand-prix-from-2022.3Z1Z3ZQZw8Zq8QZq8QZq8Q.html "Formula 1's announcement of the Las Vegas Grand Prix"
 [formula1-official-site]: https://www.formula1.com/en/racing/2023/Las_Vegas.html "Official Site for the Formula 1 Heineken Silver Las Vegas Grand Prix 2023"
 [oxblue]: https://oxblue.com "OxBlue Construction Cameras"
@@ -281,5 +267,6 @@ commercial interests.</small>
 [deno]: https://deno.land "Deno's Official Website - A secure runtime for JavaScript and TypeScript"
 [Deno KV]: https://deno.land/manual@v1.36.0/runtime/kv "Deno KV - key-value store built directly into the Deno runtime."
 [FoundationDB]: https://www.foundationdb.org "FoundationDB's Official Website"
-[Deno v1.37.1]: https://deno.land/manual@v1.37.1
+[Deno v1.37.2]: https://deno.land/manual@v1.37.2
 [Deno KV Docs]: https://docs.deno.com/kv/manual
+
