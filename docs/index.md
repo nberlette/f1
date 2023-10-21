@@ -204,15 +204,18 @@ The latest image is always saved as [`./assets/latest.jpg`][latest-img] for easy
 </tbody>
 </table>
 
----
+<br><hr><br>
 
-<footer align="center">
-
+<center>
+  
 #### [MIT] © **[Nicholas Berlette]** • Made with ♥️ in Las Vegas, NV
 
-<small>This project is not affiliated with [Formula 1] and is for educational purposes only.</small>
+<small><small>This project is not affiliated with [Formula 1] and is for educational purposes only.</small></small>
 
-</footer>
+</center>
+
+<br><hr><br>
+
 
 <!-- Project Links -->
 
