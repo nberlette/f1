@@ -202,20 +202,17 @@ The latest image is always saved as [`./assets/latest.jpg`][latest-img] for easy
 <td><a href="https://github.com/nberlette/f1/blob/main/assets/2023-09-04/22_49_09.jpg?raw=true" title="2023-09-04T22:49:09" rel="noreferrer noopener" target="_blank"><img src="https://github.com/nberlette/f1/blob/main/assets/2023-09-04/22_49_09.jpg?raw=true" alt="2023-09-04T22:49:09" style="border-radius:8px" /></a></td>
 </tr>
 </tbody>
-</table>
+</table><br>
 
-<br><hr><br>
+---
 
-<center>
-  
-#### [MIT] © **[Nicholas Berlette]** • Made with ♥️ in Las Vegas, NV
+<br><h4 style="text-align:center"><a href="https://nick.mit-license.org" rel="noopener nofollow" target="_blank" title="MIT © Nicholas Berlette"><strong>MIT</strong></a> © <a href="https://github.com/nberlette" rel="noopener nofollow" target="_blank" title="Nicholas Berlette's Profile on GitHub"><strong>Nicholas Berlette</strong></a> · <small><em>Made with ♥️ in Las Vegas, NV</em></small></h4><br>
 
-<small><small>This project is not affiliated with [Formula 1] and is for educational purposes only.</small></small>
+<br>
 
-</center>
+<h6>⚠️ This project is not affiliated with Formula 1 nor the FIA. For educational purposes only.</h6>
 
-<br><hr><br>
-
+---
 
 <!-- Project Links -->
 
