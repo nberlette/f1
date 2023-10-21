@@ -7,8 +7,8 @@ description: |
 
   Created with ♥️ in Las Vegas, Nevada
 baseurl: "/f1"
-theme: minima
-minima:
-  skin: "dark"
-  social_links:
-    - { platform: github, user_url: "https://github.com/nberlette/f1" }
+# theme: minima
+# minima:
+#   skin: "dark"
+#   social_links:
+#     - { platform: github, user_url: "https://github.com/nberlette/f1" }
