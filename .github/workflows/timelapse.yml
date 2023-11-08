@@ -13,29 +13,29 @@ on:
         default: true
       start_date:
         type: string
-        description: "Start date (no earlier than '2023-06-03'):"
+        description: "Start date (YYYY-MM-DD):"
         required: true
       end_date:
         type: string
-        description: "End date, in 'YYYY-MM-DD' format:"
+        description: "End date (YYYY-MM-DD):"
         required: true
       video_title:
         type: string
-        description: "Video title (supported placeholders are '{date_start}', '{date_end}', '{date_range}'):"
+        description: "Title (supports vars '{date_start}', '{date_end}', '{date_range}'):"
         default: "Timelapse for {date_range}"
         required: false
       video_description:
         type: string
-        description: "Video Description:"
+        description: "Description:"
         default: "Las Vegas Formula 1 Track construction from {date_range}"
         required: false
       video_filename:
         type: string
-        description: "Output Filename:"
+        description: "Filename:"
         default: "timelapse_{date_start}_{date_end}.mp4"
         required: false
       video_size:
-        description: "Resolution (width x height):"
+        description: "Resolution (w x h):"
         type: string
         default: "1024x768"
         required: false
@@ -45,13 +45,13 @@ on:
         default: 5
         required: false
       video_codec:
-        description: "Codec (-vcodec flag):"
+        description: "Codec (-vcodec):"
         default: libx264
         type: string
         required: false
       video_format:
         type: string
-        description: "Format flags (-vf flag):"
+        description: "Format flags (-vf):"
         default: "scale=-2:1080,format=yuv420p"
         required: false
 jobs:
@@ -71,6 +71,7 @@ jobs:
       filename: ${{ steps.collect.outputs.filename }}
     env:
       CACHE_KEY: ${{ inputs.start_date }}-${{ inputs.end_date }}
+      CREATE_PR: ${{ inputs.create_pr || ((github.event_name == 'schedule' && 'true') || 'false') }}
       IS_SCHEDULED: ${{ ((github.event_name == 'schedule' && 'true') || 'false') }}
       IS_WORKFLOW_DISPATCH: ${{ ((github.event_name == 'workflow_dispatch' && 'true') || 'false') }}
       IS_SCHEDULED_DAILY: ${{ ((github.event_name == 'schedule' && github.event.schedule == '45 6 * * *' && 'true') || 'false') }}
@@ -214,7 +215,7 @@ jobs:
             ${{ runner.os }}-assets-${{ github.sha }}
             ${{ runner.os }}-assets-
 
-      - name: install ffmpeg
+      - name: Install ffmpeg
         run: |
           if ! command -v ffmpeg &>/dev/null; then
             if command -v brew &>/dev/null; then
@@ -237,8 +238,6 @@ jobs:
           date_range: ${{ steps.collect.outputs.date_range }}
           timeframe: ${{ steps.collect.outputs.timeframe }}
           title: ${{ env.VIDEO_TITLE || steps.collect.outputs.title }}
-          description: ${{ env.VIDEO_DESCRIPTION || steps.collect.outputs.description }}
-          path: ${{ steps.collect.outputs.path }}
           VIDEO_FILENAME: ${{ env.VIDEO_FILENAME || steps.collect.outputs.filename }}
           VIDEO_FPS: ${{ env.VIDEO_FPS || inputs.video_fps }}
           VIDEO_CODEC: ${{ env.VIDEO_CODEC || inputs.video_codec }}
@@ -351,65 +350,70 @@ jobs:
           path: ${{ env.OUTPUT_PATH }}
           name: ${{ env.VIDEO_FILENAME }}
 
-      - if: always() && inputs.create_pr == 'true'
-        id: create_pr
-        name: "Commit + Create Pull Request"
+      - id: create_pr
+        name: "Create Pull Request"
         run: |
-          OUTPUT_PATH=${{ steps.generate.outputs.path }}
-          VIDEO_TITLE=${{ steps.generate.outputs.title }}
-          START_DATE=${{ steps.collect.outputs.start_date }}
-          END_DATE=${{ steps.collect.outputs.end_date }}
+          OUTPUT_PATH=${{ toJson(steps.generate.outputs.path) }}
+          VIDEO_TITLE=${{ toJson(steps.generate.outputs.title) }}
+          START_DATE=${{ toJson(steps.collect.outputs.start_date) }}
+          END_DATE=${{ toJson(steps.collect.outputs.end_date) }}
           TIMEFRAME=${{ steps.collect.outputs.timeframe }}
-          BRANCH_NAME="timelapse/${START_DATE}${END_DATE:+_${END_DATE}}"
-
-          COMMIT_BODY=""
-          COMMIT_BODY+=$(printf "| Label           | %-56s |\n" "Value")
-          COMMIT_BODY+=$(printf "| :-------------- | %-56s |\n" "$(printf '%-56s' ":" | tr ' ' '-')")
-          COMMIT_BODY+=$(printf "| **Title**       | %-56s |\n" "$VIDEO_TITLE")
-          COMMIT_BODY+=$(printf "| **Start Date**  | %-56s |\n" "$START_DATE")
-          COMMIT_BODY+=$(printf "| **End Date**    | %-56s |\n" "$END_DATE")
-          COMMIT_BODY+=$(printf "| **Timeframe**   | %-56s |\n" "$TIMEFRAME")
-          COMMIT_BODY+=$(printf "| **Video Size**  | %-56s |\n" "$VIDEO_SIZE")
-          COMMIT_BODY+=$(printf "| **Video FPS**   | %-56s |\n" "$VIDEO_FPS")
-          COMMIT_BODY+=$(printf "| **Video Codec** | %-56s |\n" "$VIDEO_CODEC")
-          COMMIT_BODY+=$(printf "| **Video Flags** | %-56s |\n" "$VIDEO_FORMAT")
-          COMMIT_MSG="$(
-            printf \
-              "feat: 🎬 new timelapse for %s\n\nVideo Details:\n\n$%s" \
-              "${VIDEO_START_DATE}${VIDEO_END_DATE:+" - ${VIDEO_END_DATE}" \
-              "$COMMIT_BODY"
-          )"
-          git checkout -b "$BRANCH_NAME"
-          git add --sparse "$OUTPUT_PATH"
-          git commit -m "$COMMIT_MSG"
-          git push --set-upstream origin "$BRANCH_NAME"
-
-          VIDEO_URL="https://github.com/${GITHUB_REPOSITORY}/raw/${BRANCH_NAME}/${OUTPUT_PATH}"
-          PR_BODY=$(printf "## 📝 Video Details\n\n%s\n\n" "$COMMIT_BODY")
-          PR_BODY+=$(printf "## 📺 Download the full video\n\n- [x] [%s](%s)\n\n---\n\n" "$VIDEO_TITLE" "$VIDEO_URL")
-          PR_BODY+="👋 Project maintainers, please review and merge this PR when ready!"
-          PR_BODY+=$'\n- 🤖 The F1 Bot\n\n'
-          PR_BODY+="> **Note**: if this automated PR is incorrect, please open an issue."
-
-          PR_TITLE=$(printf '🎬 New Timelapse for %s (%d days)' "$START_DATE${END_DATE:+ - $END_DATE}" "$TIMEFRAME")
-          PR_PROJECT="Timelapse"
-          PR_LABELS=(assets automated timelapse)
-          ALL_LABELS=($(gh label list --json name --jq '.[].name'))
-          for label in "${PR_LABELS[@]}"; do
-            if [[ ! " ${ALL_LABELS[@]} " =~ " ${label} " ]]; then
-              # create a hex color code for the label (deterministic based on the label name)
-              label_color=$(echo -n "$label" | md5sum | cut -c1-6)
-              gh label create "$label" -c "#${label_color}"
-            fi
-          done
-
-          gh pr create \
-            -B "main" \
-            -t "$PR_TITLE" \
-            -b "$PR_BODY" \
-            -l "${PR_LABELS}$(printf ',%s' "${PR_LABELS[@]:1}" \
-            -r "$GITHUB_ACTOR" \
-            -a "$GITHUB_ACTOR"
+                    
+          if [ -n "$CREATE_PR" ] && [[ "$CREATE_PR" != "false" ]]; then
+            BRANCH_NAME="timelapse/${START_DATE}${END_DATE:+_${END_DATE}}"
+          
+            COMMIT_BODY=""
+            COMMIT_BODY+=$(printf "| Label           | %-56s |\n" "Value")
+            COMMIT_BODY+=$(printf "| :-------------- | %-56s |\n" "$(printf '%-56s' ":" | tr ' ' '-')")
+            COMMIT_BODY+=$(printf "| **Title**       | %-56s |\n" "$VIDEO_TITLE")
+            COMMIT_BODY+=$(printf "| **Start Date**  | %-56s |\n" "$START_DATE")
+            COMMIT_BODY+=$(printf "| **End Date**    | %-56s |\n" "$END_DATE")
+            COMMIT_BODY+=$(printf "| **Timeframe**   | %-56s |\n" "$TIMEFRAME")
+            COMMIT_BODY+=$(printf "| **Video Size**  | %-56s |\n" "$VIDEO_SIZE")
+            COMMIT_BODY+=$(printf "| **Video FPS**   | %-56s |\n" "$VIDEO_FPS")
+            COMMIT_BODY+=$(printf "| **Video Codec** | %-56s |\n" "$VIDEO_CODEC")
+            COMMIT_BODY+=$(printf "| **Video Flags** | %-56s |\n" "$VIDEO_FORMAT")
+            COMMIT_MSG="$(
+              printf \
+                "feat: 🎬 new timelapse for %s\n\nVideo Details:\n\n$%s" \
+                "$START_DATE${END_DATE:+" - ${END_DATE}"}" \
+                "$COMMIT_BODY"
+            )"
+            git checkout -b "$BRANCH_NAME"
+            git add --sparse "$OUTPUT_PATH"
+            git commit -m "$COMMIT_MSG"
+            git push --set-upstream origin "$BRANCH_NAME"
+          
+            VIDEO_URL="https://github.com/${GITHUB_REPOSITORY}/raw/${BRANCH_NAME}/${OUTPUT_PATH}"
+            PR_BODY=$(printf "## 📝 Video Details\n\n%s\n\n" "$COMMIT_BODY")
+            PR_BODY+=$(printf "## 📺 Download the full video\n\n- [x] [%s](%s)\n\n---\n\n" "$VIDEO_TITLE" "$VIDEO_URL")
+            PR_BODY+="👋 Project maintainers, please review and merge this PR when ready!"
+            PR_BODY+=$'\n- 🤖 The F1 Bot\n\n'
+            PR_BODY+="> **Note**: if this automated PR is incorrect, please open an issue."
+          
+            PR_TITLE=$(printf '🎬 New Timelapse for %s (%d days)' "$START_DATE${END_DATE:+" - $END_DATE"}" "$TIMEFRAME")
+            PR_PROJECT="Timelapse"
+            PR_LABELS=(assets automated timelapse)
+            ALL_LABELS=($(gh label list --json name --jq '.[].name'))
+            for label in "${PR_LABELS[@]}"; do
+              if [[ ! " ${ALL_LABELS[@]} " =~ " ${label} " ]]; then
+                # create a hex color code for the label (deterministic based on the label name)
+                label_color=$(echo -n "$label" | md5sum | cut -c1-6)
+                gh label create "$label" -c "#${label_color}"
+              fi
+            done
+          
+            gh pr create \
+              -B "main" \
+              -H "$BRANCH_NAME" \
+              -t "$PR_TITLE" \
+              -b "$PR_BODY" \
+              -l "$PR_LABELS$(printf ',%s' "${PR_LABELS[@]:1}")" \
+              -r "$GITHUB_ACTOR" \
+              -a "$GITHUB_ACTOR"
+          else
+            echo "❌ Create Pull Request step is disabled. Skipping..."
+          fi
 
       - if: always() && env.DEBUG_LOG
         name: Upload Debug Log
